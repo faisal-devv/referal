@@ -1,0 +1,15 @@
+# Copy this file to .env in the server directory
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/referral-hub
+# Or use MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/referral-hub
+
+# JWT Secret (generate a random string)
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# Server Port
+PORT=5000
+
+# Client URL (for CORS)
+CLIENT_URL=http://localhost:3000
