@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const connectDB = require('../server/config/database');
+const connectDB = require('../config/database');
 
 // Load environment variables
 require('dotenv').config();
@@ -33,12 +33,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
-app.use('/api/auth', require('../server/routes/auth'));
-app.use('/api/leads', require('../server/routes/leads'));
-app.use('/api/wallet', require('../server/routes/wallet'));
-app.use('/api/chat', require('../server/routes/chat'));
-app.use('/api/users', require('../server/routes/users'));
-app.use('/api/admin', require('../server/routes/admin'));
+app.use('/api/auth', require('../routes/auth'));
+app.use('/api/leads', require('../routes/leads'));
+app.use('/api/wallet', require('../routes/wallet'));
+app.use('/api/chat', require('../routes/chat'));
+app.use('/api/users', require('../routes/users'));
+app.use('/api/admin', require('../routes/admin'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
