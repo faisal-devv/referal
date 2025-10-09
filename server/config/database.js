@@ -1,17 +1,39 @@
 const mongoose = require('mongoose');
 
+// Cache the connection to avoid multiple connections in serverless
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/referral-hub', {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    });
+    };
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error('Database connection error:', error.message);
-    process.exit(1);
+    cached.promise = mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/referral-hub', opts).then((mongoose) => {
+      console.log(`MongoDB Connected: ${mongoose.connection.host}`);
+      return mongoose;
+    });
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error('Database connection error:', e.message);
+    throw e;
+  }
+
+  return cached.conn;
 };
 
 module.exports = connectDB;
