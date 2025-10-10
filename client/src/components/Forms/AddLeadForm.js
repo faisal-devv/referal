@@ -216,9 +216,6 @@ const AddLeadForm = () => {
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Submit a Lead
-        </h2>
         <p className="text-gray-600">
           Help us connect with potential clients and earn rewards for successful referrals
         </p>
