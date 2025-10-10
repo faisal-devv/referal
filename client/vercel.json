@@ -2,14 +2,18 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "source": "/api/:path*",
+      "destination": "https://referal-backend-git-main-faisal-waleeds-projects.vercel.app/api/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/static/(.*)",
+      "destination": "/static/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
