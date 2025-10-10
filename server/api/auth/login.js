@@ -1,28 +1,12 @@
-const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const User = require('../../models/User');
-const connectDB = require('../../config/database');
-
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback-secret', {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
-  });
-};
+const User = require('../../../models/User');
+const connectDB = require('../../../config/database');
+const { setCorsHeaders, handleOptions, generateToken } = require('../_utils');
 
 module.exports = async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'http://localhost:3000');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
-  );
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return handleOptions(res);
   }
 
   if (req.method !== 'POST') {
@@ -30,14 +14,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Connect to database
     await connectDB();
-
-    // Validation
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
 
     const { email, password } = req.body;
 

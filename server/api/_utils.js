@@ -28,7 +28,7 @@ const generateToken = (id) => {
 // Protect middleware for authentication
 const protect = async (req) => {
   const jwt = require('jsonwebtoken');
-  const User = require('../models/User');
+  const User = require('../../models/User');
   
   let token;
   

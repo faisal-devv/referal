@@ -8,6 +8,26 @@
   ],
   "routes": [
     {
+      "src": "/api/health",
+      "dest": "/api/health"
+    },
+    {
+      "src": "/api/auth/(.*)",
+      "dest": "/api/auth/$1"
+    },
+    {
+      "src": "/api/leads/(.*)",
+      "dest": "/api/leads/$1"
+    },
+    {
+      "src": "/api/wallet/(.*)",
+      "dest": "/api/wallet/$1"
+    },
+    {
+      "src": "/api/chat/(.*)",
+      "dest": "/api/chat/$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     }
