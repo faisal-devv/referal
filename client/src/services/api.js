@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { demoApi, shouldUseDemoApi, setupDemoInterceptors } from './demoApi';
 
 // Create axios instance
 const baseURL = process.env.REACT_APP_API_URL || '/api';
@@ -12,6 +13,9 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Setup demo interceptors
+setupDemoInterceptors(api);
 
 // Request interceptor
 api.interceptors.request.use(
@@ -54,29 +58,29 @@ export const authAPI = {
 
 // Leads API
 export const leadsAPI = {
-  getLeads: () => api.get('/leads'),
-  getLead: (id) => api.get(`/leads/${id}`),
-  createLead: (leadData) => api.post('/leads', leadData),
-  updateLeadStatus: (id, statusData) => api.put(`/leads/${id}/status`, statusData),
-  getAllLeads: () => api.get('/leads/admin/all')
+  getLeads: () => shouldUseDemoApi() ? demoApi.getLeads() : api.get('/leads'),
+  getLead: (id) => shouldUseDemoApi() ? Promise.resolve({ data: demoApi.getLeads().data.find(l => l._id === id) }) : api.get(`/leads/${id}`),
+  createLead: (leadData) => shouldUseDemoApi() ? demoApi.createLead(leadData) : api.post('/leads', leadData),
+  updateLeadStatus: (id, statusData) => shouldUseDemoApi() ? demoApi.updateLead(id, statusData) : api.put(`/leads/${id}/status`, statusData),
+  getAllLeads: () => shouldUseDemoApi() ? demoApi.getLeads() : api.get('/leads/admin/all')
 };
 
 // Wallet API
 export const walletAPI = {
-  getWallet: () => api.get('/wallet'),
-  requestWithdrawal: (withdrawalData) => api.post('/wallet/withdraw', withdrawalData),
-  getWithdrawals: () => api.get('/wallet/withdrawals'),
-  getAllWithdrawals: () => api.get('/wallet/admin/withdrawals'),
-  updateWithdrawalStatus: (id, statusData) => api.put(`/wallet/admin/withdrawals/${id}`, statusData),
-  updateWalletBalance: (balanceData) => api.put('/wallet/admin/balance', balanceData)
+  getWallet: () => shouldUseDemoApi() ? Promise.resolve({ data: { balance: 1250.50, totalEarnings: 2500.00, pendingWithdrawals: 0 } }) : api.get('/wallet'),
+  requestWithdrawal: (withdrawalData) => shouldUseDemoApi() ? demoApi.createWithdrawal(withdrawalData) : api.post('/wallet/withdraw', withdrawalData),
+  getWithdrawals: () => shouldUseDemoApi() ? demoApi.getWithdrawals() : api.get('/wallet/withdrawals'),
+  getAllWithdrawals: () => shouldUseDemoApi() ? demoApi.getWithdrawals() : api.get('/wallet/admin/withdrawals'),
+  updateWithdrawalStatus: (id, statusData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - status update simulated' } }) : api.put(`/wallet/admin/withdrawals/${id}`, statusData),
+  updateWalletBalance: (balanceData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - balance update simulated' } }) : api.put('/wallet/admin/balance', balanceData)
 };
 
 // Chat API
 export const chatAPI = {
-  sendMessage: (messageData) => api.post('/chat/send', messageData),
-  getConversations: () => api.get('/chat/conversations'),
-  getMessages: (userId) => api.get(`/chat/messages/${userId}`),
-  getUsers: () => api.get('/chat/admin/users')
+  sendMessage: (messageData) => shouldUseDemoApi() ? demoApi.sendMessage(messageData) : api.post('/chat/send', messageData),
+  getConversations: () => shouldUseDemoApi() ? Promise.resolve({ data: [] }) : api.get('/chat/conversations'),
+  getMessages: (userId) => shouldUseDemoApi() ? demoApi.getMessages() : api.get(`/chat/messages/${userId}`),
+  getUsers: () => shouldUseDemoApi() ? Promise.resolve({ data: [] }) : api.get('/chat/admin/users')
 };
 
 // Users API

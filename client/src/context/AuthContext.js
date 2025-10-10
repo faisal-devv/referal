@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { demoLogin, isDemoMode, getDemoUserType, demoUsers } from '../utils/demoData';
 
 const AuthContext = createContext();
 
@@ -76,6 +77,24 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
+        // Check if it's demo mode
+        if (isDemoMode()) {
+          const userType = getDemoUserType();
+          const user = demoUsers[userType];
+          if (user) {
+            dispatch({
+              type: 'LOGIN_SUCCESS',
+              payload: user
+            });
+            // Redirect to dashboard if user is on homepage
+            if (window.location.pathname === '/') {
+              navigate('/dashboard');
+            }
+            return;
+          }
+        }
+        
+        // Regular authentication
         try {
           const response = await axios.get('/api/auth/me');
           dispatch({
@@ -173,13 +192,41 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  const demoLoginUser = (userType = 'regular') => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const { token, ...userData } = demoLogin(userType);
+      
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: userData
+      });
+      
+      toast.success(`Demo login successful! Welcome ${userData.name}`);
+      navigate('/dashboard');
+      return { success: true };
+    } catch (error) {
+      const message = error.message || 'Demo login failed';
+      dispatch({
+        type: 'LOGIN_FAILURE',
+        payload: message
+      });
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     ...state,
     login,
     register,
     logout,
     updateUser,
-    clearError
+    clearError,
+    demoLoginUser
   };
 
   return (
