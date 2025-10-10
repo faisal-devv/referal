@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "server/api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/server/api/health.js"
+    },
+    {
+      "src": "/api/auth/login",
+      "dest": "/server/api/auth/login.js"
+    },
+    {
+      "src": "/api/auth/register",
+      "dest": "/server/api/auth/register.js"
+    },
+    {
+      "src": "/api/auth/me",
+      "dest": "/server/api/auth/me.js"
+    },
+    {
+      "src": "/api/leads/(.*)",
+      "dest": "/server/api/leads/$1.js"
+    },
+    {
+      "src": "/api/wallet/(.*)",
+      "dest": "/server/api/wallet/$1.js"
+    },
+    {
+      "src": "/api/chat/(.*)",
+      "dest": "/server/api/chat/$1.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/$1"
+    }
+  ]
+}
