@@ -44,6 +44,15 @@ const leadSchema = new mongoose.Schema({
     trim: true,
     maxlength: [500, 'Description cannot be more than 500 characters']
   },
+  hasReference: {
+    type: Boolean,
+    default: false
+  },
+  referencePerson: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Reference person name cannot be more than 100 characters']
+  },
   status: {
     type: String,
     enum: [
