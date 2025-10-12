@@ -2,6 +2,7 @@ const express = require('express');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
+const Query = require('../models/Query');
 
 const router = express.Router();
 
@@ -76,3 +77,56 @@ router.get('/stats', protect, adminOnly, async (req, res) => {
 });
 
 module.exports = router;
+// Queries admin endpoints
+
+// @route   GET /api/admin/queries
+// @desc    Get all contact queries
+// @access  Private (Admin only)
+router.get('/queries', protect, adminOnly, async (req, res) => {
+  try {
+    const queries = await Query.find().sort({ createdAt: -1 });
+    res.json(queries);
+  } catch (error) {
+    console.error('Admin fetch queries error:', error);
+    res.status(500).json({ message: 'Server error fetching queries' });
+  }
+});
+
+// @route   GET /api/admin/queries/:id
+// @desc    Get single query details
+// @access  Private (Admin only)
+router.get('/queries/:id', protect, adminOnly, async (req, res) => {
+  try {
+    const query = await Query.findById(req.params.id);
+    if (!query) return res.status(404).json({ message: 'Query not found' });
+    res.json(query);
+  } catch (error) {
+    console.error('Admin get query error:', error);
+    res.status(500).json({ message: 'Server error fetching query' });
+  }
+});
+
+// @route   PUT /api/admin/queries/:id/status
+// @desc    Update query status and handler
+// @access  Private (Admin only)
+router.put('/queries/:id/status', protect, adminOnly, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['New', 'In Progress', 'Resolved', 'Closed'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const query = await Query.findById(req.params.id);
+    if (!query) return res.status(404).json({ message: 'Query not found' });
+
+    query.status = status;
+    query.handledBy = req.user?._id || null;
+    query.handledAt = ['Resolved', 'Closed'].includes(status) ? new Date() : null;
+    await query.save();
+
+    res.json(query);
+  } catch (error) {
+    console.error('Admin update query status error:', error);
+    res.status(500).json({ message: 'Server error updating query status' });
+  }
+});
