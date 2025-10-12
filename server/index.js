@@ -49,7 +49,7 @@ app.use(async (req, res, next) => {
 
 // CORS
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  origin: '*',
   credentials: true
 }));
 
