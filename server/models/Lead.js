@@ -8,8 +8,9 @@ const leadSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: [true, 'Please select a category'],
-    enum: ['IT', 'Banking', 'Real Estate', 'Construction']
+    required: [true, 'Please provide a category'],
+    trim: true,
+    maxlength: [100, 'Category cannot be more than 100 characters']
   },
   companyName: {
     type: String,

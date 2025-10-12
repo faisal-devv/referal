@@ -22,9 +22,19 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Ensure DB connection before handling requests to avoid race conditions
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // CORS
 app.use(cors({
-  origin: process.env.CLIENT_URL || "*",
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
   credentials: true
 }));
 

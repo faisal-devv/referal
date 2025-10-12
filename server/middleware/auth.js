@@ -25,7 +25,15 @@ const protect = async (req, res, next) => {
 
       next();
     } catch (error) {
-      console.error('Token verification error:', error);
+      console.error('Token verification error:', error?.message);
+      if (error?.name === 'TokenExpiredError') {
+        const devDetail = process.env.NODE_ENV !== 'production' && error?.expiredAt ? ` (expired at ${error.expiredAt.toISOString()})` : '';
+        return res.status(401).json({ message: `Not authorized, token expired${devDetail}` });
+      }
+      if (error?.name === 'JsonWebTokenError') {
+        const devDetail = process.env.NODE_ENV !== 'production' && error?.message ? ` (${error.message})` : '';
+        return res.status(401).json({ message: `Not authorized, invalid token${devDetail}` });
+      }
       return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }

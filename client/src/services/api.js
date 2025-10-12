@@ -49,7 +49,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
-  getMe: () => api.get('/auth/me'),
+  getMe: () => shouldUseDemoApi() ? Promise.resolve({ data: JSON.parse(localStorage.getItem('demoUser') || '{}') }) : api.get('/auth/me'),
   logout: () => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -85,10 +85,10 @@ export const chatAPI = {
 
 // Users API
 export const usersAPI = {
-  getUsers: () => api.get('/users'),
-  getUser: (id) => api.get(`/users/${id}`),
-  updateUserStatus: (id, statusData) => api.put(`/users/${id}/status`, statusData),
-  updateUserRole: (id, roleData) => api.put(`/users/${id}/role`, roleData)
+  getUsers: () => shouldUseDemoApi() ? Promise.resolve({ data: [] }) : api.get('/users'),
+  getUser: (id) => shouldUseDemoApi() ? Promise.resolve({ data: null }) : api.get(`/users/${id}`),
+  updateUserStatus: (id, statusData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - status update simulated' } }) : api.put(`/users/${id}/status`, statusData),
+  updateUserRole: (id, roleData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - role update simulated' } }) : api.put(`/users/${id}/role`, roleData)
 };
 
 // File upload API

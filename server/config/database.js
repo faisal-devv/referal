@@ -14,12 +14,10 @@ const connectDB = async () => {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      bufferCommands: false
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/referral-hub', opts).then((mongoose) => {
+    cached.promise = mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://abdullahriaz:hduh289h%40@yeahboimeow.5qio96x.mongodb.net/?retryWrites=true&w=majority&appName=yeahboimeow', opts).then((mongoose) => {
       console.log(`MongoDB Connected: ${mongoose.connection.host}`);
       return mongoose;
     });

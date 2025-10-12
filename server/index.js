@@ -5,9 +5,15 @@ const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
 const connectDB = require('./config/database');
+const dns = require('dns');
 
 // Load environment variables
 require('dotenv').config();
+
+// Prefer IPv4 DNS results to avoid some SRV/IPv6 connectivity issues
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // Connect to database
 connectDB();
@@ -30,6 +36,16 @@ const limiter = rateLimit({
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
+
+// Ensure DB connection before handling requests to avoid race conditions
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // CORS
 app.use(cors({
@@ -123,6 +139,17 @@ if (process.env.NODE_ENV !== 'production') {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+  
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use.\n` +
+        `Try one of the following:\n` +
+        `- Kill the process: lsof -n -i :${PORT} | awk 'NR>1 {print $2}' | xargs -r kill -9\n` +
+        `- Or run on another port: PORT=5001 npm run dev`);
+      process.exit(1);
+    }
+    throw err;
   });
 }
 
