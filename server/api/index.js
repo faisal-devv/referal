@@ -59,6 +59,7 @@ app.use('/api/wallet', require('../routes/wallet'));
 app.use('/api/chat', require('../routes/chat'));
 app.use('/api/users', require('../routes/users'));
 app.use('/api/admin', require('../routes/admin'));
+app.use('/api/queries', require('../routes/queries'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

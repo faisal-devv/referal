@@ -9,7 +9,7 @@ const router = express.Router();
 // @desc    Create a new lead
 // @access  Private
 router.post('/', protect, [
-  body('category').isIn(['IT', 'Banking', 'Real Estate', 'Construction']).withMessage('Invalid category'),
+  body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
   body('companyName').trim().isLength({ min: 1 }).withMessage('Company name is required'),
   body('contactPerson').trim().isLength({ min: 1 }).withMessage('Contact person is required'),
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
