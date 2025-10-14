@@ -14,7 +14,6 @@ router.post('/', protect, [
   body('contactPerson').trim().isLength({ min: 1 }).withMessage('Contact person is required'),
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('phone').trim().isLength({ min: 1 }).withMessage('Phone number is required'),
-  body('description').trim().isLength({ min: 10 }).withMessage('Description must be at least 10 characters'),
   body('value').isNumeric().isFloat({ min: 0 }).withMessage('Value must be a positive number'),
   body('currency').isIn(['USD', 'AED', 'EUR', 'SAR']).withMessage('Invalid currency'),
 ], async (req, res) => {
