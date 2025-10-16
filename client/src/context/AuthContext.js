@@ -6,6 +6,8 @@ import { demoLogin, isDemoMode, getDemoUserType, demoUsers } from '../utils/demo
 
 const AuthContext = createContext();
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_START':
@@ -96,7 +98,7 @@ export const AuthProvider = ({ children }) => {
         
         // Regular authentication
         try {
-          const response = await axios.get('/api/auth/me');
+          const response = await axios.get(`${API_BASE_URL}/auth/me`);
           dispatch({
             type: 'LOGIN_SUCCESS',
             payload: response.data
@@ -121,7 +123,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
       const { token, ...userData } = response.data;
       
       localStorage.setItem('token', token);
@@ -147,9 +149,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (name, email, password) => {
+    console.log('Registering user:', name, email, password);
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await axios.post('/api/auth/register', { name, email, password });
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, { name, email, password });
       const { token, ...userData } = response.data;
       
       localStorage.setItem('token', token);

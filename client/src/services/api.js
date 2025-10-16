@@ -91,6 +91,14 @@ export const usersAPI = {
   updateUserRole: (id, roleData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - role update simulated' } }) : api.put(`/users/${id}/role`, roleData)
 };
 
+// Queries API
+export const queriesAPI = {
+  createQuery: (data) => api.post('/queries', data),
+  getQueries: () => api.get('/admin/queries'),
+  getQuery: (id) => api.get(`/admin/queries/${id}`),
+  updateStatus: (id, statusData) => api.put(`/admin/queries/${id}/status`, statusData)
+};
+
 // File upload API
 export const uploadAPI = {
   uploadFile: (file, onProgress) => {

@@ -39,7 +39,7 @@ const AboutPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              About Referral Hub
+              About Referus.co
             </h1>
             <p className="text-xl text-primary-100 max-w-3xl mx-auto">
               We're revolutionizing how professionals monetize their networks through 
@@ -77,7 +77,7 @@ const AboutPage = () => {
               </h2>
               <div className="space-y-4 text-gray-600">
                 <p>
-                  Referral Hub was born from a simple observation: professionals have 
+                  Referus.co was born from a simple observation: professionals have 
                   extensive networks but limited ways to monetize them effectively. 
                   Traditional referral programs are fragmented, unreliable, and often 
                   lack transparency.
@@ -162,52 +162,6 @@ const AboutPage = () => {
                 </p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Meet Our Team
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              The passionate people behind Referral Hub
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-xl p-8 shadow-lg text-center">
-              <div className="w-24 h-24 bg-primary-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-600">JD</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">John Doe</h3>
-              <p className="text-primary-600 mb-4">CEO & Founder</p>
-              <p className="text-gray-600">
-                Former tech executive with 15+ years in business development and networking.
-              </p>
-            </div>
-            <div className="bg-white rounded-xl p-8 shadow-lg text-center">
-              <div className="w-24 h-24 bg-primary-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-600">JS</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Jane Smith</h3>
-              <p className="text-primary-600 mb-4">CTO</p>
-              <p className="text-gray-600">
-                Technology leader with expertise in scalable platforms and user experience.
-              </p>
-            </div>
-            <div className="bg-white rounded-xl p-8 shadow-lg text-center">
-              <div className="w-24 h-24 bg-primary-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-600">MJ</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Mike Johnson</h3>
-              <p className="text-primary-600 mb-4">Head of Operations</p>
-              <p className="text-gray-600">
-                Operations expert focused on user success and platform reliability.
-              </p>
-            </div>
           </div>
         </div>
       </section>

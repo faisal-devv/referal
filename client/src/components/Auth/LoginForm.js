@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User, Shield, Crown } from 'lucide-react';
 
-const LoginForm = ({ onSwitchToRegister }) => {
+const LoginForm = ({ onSwitchToRegister, onSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,11 +19,17 @@ const LoginForm = ({ onSwitchToRegister }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password);
+    if (result?.success && typeof onSuccess === 'function') {
+      onSuccess();
+    }
   };
 
   const handleDemoLogin = (userType) => {
-    demoLoginUser(userType);
+    const result = demoLoginUser(userType);
+    if (result?.success && typeof onSuccess === 'function') {
+      onSuccess();
+    }
   };
 
   return (
@@ -31,7 +37,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
       <div className="bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-          <p className="text-gray-600 mt-2">Sign in to your Referral Hub account</p>
+          <p className="text-gray-600 mt-2">Sign in to your Referus.co account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -109,47 +115,6 @@ const LoginForm = ({ onSwitchToRegister }) => {
             )}
           </button>
         </form>
-
-        {/* Demo Login Section */}
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or try demo accounts</span>
-            </div>
-          </div>
-          
-          <div className="mt-4 space-y-3">
-            <button
-              onClick={() => handleDemoLogin('regular')}
-              disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Demo User Account
-            </button>
-            
-            <button
-              onClick={() => handleDemoLogin('employee')}
-              disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Demo Employee Account
-            </button>
-            
-            <button
-              onClick={() => handleDemoLogin('admin')}
-              disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            >
-              <Crown className="h-4 w-4 mr-2" />
-              Demo Admin Account
-            </button>
-          </div>
-        </div>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">

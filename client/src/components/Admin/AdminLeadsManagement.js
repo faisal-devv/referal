@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const AdminLeadsManagement = () => {
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -54,7 +56,7 @@ const AdminLeadsManagement = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/admin/leads', {
+      const response = await fetch(`${API_BASE_URL}/admin/leads`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -74,6 +76,8 @@ const AdminLeadsManagement = () => {
         email: lead.email,
         phone: lead.phone,
         industry: lead.category,
+        hasReference: !!lead.hasReference,
+        referencePerson: lead.referencePerson || '',
         status: lead.status,
         value: lead.value || 0,
         currency: lead.currency || 'USD',
@@ -118,7 +122,7 @@ const AdminLeadsManagement = () => {
 
   const updateLeadStatus = async (leadId, newStatus) => {
     try {
-      const response = await fetch(`/api/admin/leads/${leadId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/leads/${leadId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -262,6 +266,9 @@ const AdminLeadsManagement = () => {
                       <div className="text-sm font-medium text-gray-900">{lead.fullName}</div>
                       <div className="text-sm text-gray-500">{lead.companyName}</div>
                       <div className="text-xs text-gray-400">{lead.email}</div>
+                      {lead.hasReference && lead.referencePerson && (
+                        <div className="text-xs text-gray-500 mt-1">Ref: {lead.referencePerson}</div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -355,6 +362,12 @@ const AdminLeadsManagement = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
                     <p className="text-sm text-gray-900">{selectedLead.companyName}</p>
                   </div>
+                  {selectedLead.hasReference && selectedLead.referencePerson && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Reference Person</label>
+                      <p className="text-sm text-gray-900">{selectedLead.referencePerson}</p>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <p className="text-sm text-gray-900">{selectedLead.email}</p>

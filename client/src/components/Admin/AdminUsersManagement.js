@@ -16,6 +16,7 @@ import {
   FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usersAPI, leadsAPI } from '../../services/api';
 
 const AdminUsersManagement = () => {
   const [users, setUsers] = useState([]);
@@ -37,84 +38,45 @@ const AdminUsersManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Mock data - in production, this would be an API call
-      const mockUsers = [
-        {
-          id: 'user1',
-          name: 'Alice Johnson',
-          email: 'alice@example.com',
-          role: 'user',
-          isActive: true,
-          createdAt: '2024-01-10T08:30:00Z',
-          lastLogin: '2024-01-15T14:20:00Z',
-          totalLeads: 5,
-          successfulLeads: 2,
-          totalEarnings: 2500.00,
+      // Fetch users and all leads (admin) to compute simple per-user stats
+      const [usersRes, leadsRes] = await Promise.all([
+        usersAPI.getUsers(),
+        // If leads fetch fails (permissions, etc.), continue with empty list
+        leadsAPI.getAllLeads().catch(() => ({ data: [] }))
+      ]);
+
+      const leads = Array.isArray(leadsRes?.data) ? leadsRes.data : [];
+
+      const mappedUsers = (usersRes?.data || []).map((u) => {
+        const userLeads = leads.filter((l) => {
+          const leadUserId = typeof l.user === 'object' && l.user !== null ? l.user._id : l.user;
+          return leadUserId?.toString() === u._id?.toString();
+        });
+        const successfulLeads = userLeads.filter((l) => l.status === 'Deal Closed').length;
+        const totalEarnings = userLeads.reduce((sum, l) => sum + (Number(l.commission) || 0), 0);
+
+        return {
+          id: u._id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          isActive: u.isActive,
+          createdAt: u.createdAt,
+          // Backend doesn't currently track lastLogin; fall back to createdAt
+          lastLogin: u.createdAt,
+          totalLeads: userLeads.length,
+          successfulLeads,
+          totalEarnings,
           wallet: {
-            usd: 1500.00,
-            aed: 2000.00,
-            euro: 1200.00,
-            sar: 800.00
+            usd: u.wallet?.usd || 0,
+            aed: u.wallet?.aed || 0,
+            euro: u.wallet?.euro || 0,
+            sar: u.wallet?.sar || 0
           }
-        },
-        {
-          id: 'user2',
-          name: 'Bob Davis',
-          email: 'bob@example.com',
-          role: 'user',
-          isActive: true,
-          createdAt: '2024-01-12T10:15:00Z',
-          lastLogin: '2024-01-14T16:45:00Z',
-          totalLeads: 3,
-          successfulLeads: 1,
-          totalEarnings: 1200.00,
-          wallet: {
-            usd: 800.00,
-            aed: 1000.00,
-            euro: 600.00,
-            sar: 400.00
-          }
-        },
-        {
-          id: 'user3',
-          name: 'Carol Brown',
-          email: 'carol@example.com',
-          role: 'user',
-          isActive: true,
-          createdAt: '2024-01-08T12:00:00Z',
-          lastLogin: '2024-01-15T11:30:00Z',
-          totalLeads: 7,
-          successfulLeads: 4,
-          totalEarnings: 4800.00,
-          wallet: {
-            usd: 2800.00,
-            aed: 3500.00,
-            euro: 2100.00,
-            sar: 1400.00
-          }
-        },
-        {
-          id: 'user4',
-          name: 'David Wilson',
-          email: 'david@example.com',
-          role: 'user',
-          isActive: false,
-          createdAt: '2024-01-05T15:20:00Z',
-          lastLogin: '2024-01-10T09:15:00Z',
-          totalLeads: 2,
-          successfulLeads: 0,
-          totalEarnings: 0.00,
-          wallet: {
-            usd: 0.00,
-            aed: 0.00,
-            euro: 0.00,
-            sar: 0.00
-          }
-        }
-      ];
-      
-      setUsers(mockUsers);
+        };
+      });
+
+      setUsers(mappedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
@@ -149,13 +111,17 @@ const AdminUsersManagement = () => {
 
   const toggleUserStatus = async (userId) => {
     try {
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.id === userId ? { ...user, isActive: !user.isActive } : user
+      const user = users.find((u) => u.id === userId);
+      if (!user) return;
+
+      await usersAPI.updateUserStatus(userId, { isActive: !user.isActive });
+
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.id === userId ? { ...u, isActive: !user.isActive } : u
         )
       );
-      
-      const user = users.find(u => u.id === userId);
+
       toast.success(`User ${user.isActive ? 'deactivated' : 'activated'} successfully`);
     } catch (error) {
       console.error('Error updating user status:', error);
@@ -169,6 +135,7 @@ const AdminUsersManagement = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

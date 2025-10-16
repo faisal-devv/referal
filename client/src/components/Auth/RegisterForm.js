@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
-const RegisterForm = ({ onSwitchToLogin }) => {
+const RegisterForm = ({ onSwitchToLogin, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,7 +33,10 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       return;
     }
 
-    await register(formData.name, formData.email, formData.password);
+    const result = await register(formData.name, formData.email, formData.password);
+    if (result?.success && typeof onSuccess === 'function') {
+      onSuccess();
+    }
   };
 
   return (
@@ -41,7 +44,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       <div className="bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-          <p className="text-gray-600 mt-2">Join Referral Hub and start earning</p>
+          <p className="text-gray-600 mt-2">Join Referus.co and start earning</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

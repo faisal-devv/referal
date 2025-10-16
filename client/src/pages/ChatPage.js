@@ -14,6 +14,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -66,7 +68,7 @@ const ChatPage = () => {
   const fetchConversations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/chat/conversations');
+      const response = await axios.get(`${API_BASE_URL}/chat/conversations`);
       setConversations(response.data);
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -78,7 +80,7 @@ const ChatPage = () => {
 
   const fetchMessages = async (userId) => {
     try {
-      const response = await axios.get(`/api/chat/messages/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/chat/messages/${userId}`);
       setMessages(response.data);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -97,7 +99,7 @@ const ChatPage = () => {
       };
 
       // Send via API
-      await axios.post('/api/chat/send', messageData);
+      await axios.post(`${API_BASE_URL}/chat/send`, messageData);
       
       // Send via socket
       socket.emit('sendMessage', {

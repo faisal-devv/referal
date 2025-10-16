@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Save, Users, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usersAPI, walletAPI } from '../../services/api';
 
 const AdminEarningsManagement = () => {
   const [users, setUsers] = useState([]);
@@ -13,31 +14,41 @@ const AdminEarningsManagement = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Mock users data - in real app, this would come from backend
-  const mockUsers = [
-    { id: 1, name: 'John Doe', email: 'john@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@example.com' },
-    { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com' }
-  ];
-
   useEffect(() => {
-    setUsers(mockUsers);
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const res = await usersAPI.getUsers();
+        const fetchedUsers = (res?.data || []).map(u => ({
+          id: u._id,
+          name: u.name,
+          email: u.email,
+          wallet: {
+            usd: u.wallet?.usd || 0,
+            aed: u.wallet?.aed || 0,
+            euro: u.wallet?.euro || 0,
+            sar: u.wallet?.sar || 0
+          }
+        }));
+        setUsers(fetchedUsers);
+      } catch (err) {
+        console.error('Failed to load users:', err);
+        toast.error('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
   }, []);
-
-  const loadUserEarnings = (userEmail) => {
-    const walletData = JSON.parse(localStorage.getItem(`wallet_${userEmail}`) || '{}');
-    setEarnings({
-      usd: walletData.usd || 0,
-      aed: walletData.aed || 0,
-      euro: walletData.euro || 0,
-      sar: walletData.sar || 0
-    });
-  };
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    loadUserEarnings(user.email);
+    setEarnings({
+      usd: user.wallet?.usd || 0,
+      aed: user.wallet?.aed || 0,
+      euro: user.wallet?.euro || 0,
+      sar: user.wallet?.sar || 0
+    });
   };
 
   const handleEarningsChange = (currency, value) => {
@@ -56,15 +67,44 @@ const AdminEarningsManagement = () => {
 
     setLoading(true);
     try {
-      // Save to localStorage (in real app, this would be saved to backend)
-      localStorage.setItem(`wallet_${selectedUser.email}`, JSON.stringify(earnings));
-      
+      const updates = [
+        { currency: 'USD', amount: Number(earnings.usd) || 0 },
+        { currency: 'AED', amount: Number(earnings.aed) || 0 },
+        { currency: 'EUR', amount: Number(earnings.euro) || 0 },
+        { currency: 'SAR', amount: Number(earnings.sar) || 0 }
+      ];
+
+      await Promise.all(
+        updates.map(u => walletAPI.updateWalletBalance({
+          userId: selectedUser.id,
+          currency: u.currency,
+          amount: u.amount,
+          operation: 'set'
+        }))
+      );
+
+      // Reflect changes locally
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
+        ...u,
+        wallet: {
+          usd: updates[0].amount,
+          aed: updates[1].amount,
+          euro: updates[2].amount,
+          sar: updates[3].amount
+        }
+      } : u));
+
+      setSelectedUser(prev => prev ? {
+        ...prev,
+        wallet: {
+          usd: updates[0].amount,
+          aed: updates[1].amount,
+          euro: updates[2].amount,
+          sar: updates[3].amount
+        }
+      } : prev);
+
       toast.success(`Earnings updated for ${selectedUser.name}`);
-      
-      // Dispatch custom event to notify dashboard of earnings update
-      window.dispatchEvent(new CustomEvent('earningsUpdated', {
-        detail: { userEmail: selectedUser.email, earnings }
-      }));
     } catch (error) {
       console.error('Error saving earnings:', error);
       toast.error('Failed to save earnings');
@@ -102,6 +142,12 @@ const AdminEarningsManagement = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Select User</h3>
           <div className="space-y-2">
+            {loading && users.length === 0 && (
+              <div className="text-sm text-gray-500">Loading users...</div>
+            )}
+            {!loading && users.length === 0 && (
+              <div className="text-sm text-gray-500">No users found</div>
+            )}
             {users.map((user) => (
               <button
                 key={user.id}

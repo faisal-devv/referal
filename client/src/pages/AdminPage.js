@@ -22,6 +22,7 @@ import AdminUsersManagement from '../components/Admin/AdminUsersManagement';
 import AdminEarningsManagement from '../components/Admin/EarningsManagement';
 import AdminSettings from '../components/Admin/AdminSettings';
 import AdminSummary from '../components/Admin/AdminSummary';
+import AdminQueriesManagement from '../components/Admin/AdminQueriesManagement';
 
 const AdminPage = () => {
   const [activeSection, setActiveSection] = useState('summary');
@@ -40,6 +41,7 @@ const AdminPage = () => {
     { id: 'leads', label: 'Leads Management', icon: FileText, color: 'text-green-600' },
     { id: 'users', label: 'Users Management', icon: Users, color: 'text-purple-600' },
     { id: 'earnings', label: 'Earnings Management', icon: DollarSign, color: 'text-yellow-600' },
+    { id: 'queries', label: 'Queries', icon: FileText, color: 'text-indigo-600' },
     { id: 'settings', label: 'Settings', icon: Settings, color: 'text-gray-600' }
   ];
 
@@ -80,6 +82,8 @@ const AdminPage = () => {
         return <AdminUsersManagement />;
       case 'earnings':
         return <AdminEarningsManagement />;
+      case 'queries':
+        return <AdminQueriesManagement />;
       case 'settings':
         return <AdminSettings />;
       default:
@@ -157,7 +161,7 @@ const AdminPage = () => {
         {/* Sidebar footer */}
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
           <div className="text-xs text-gray-500 text-center">
-            Referral Hub Admin v1.0
+            Referus.co Admin v1.0
           </div>
         </div>
       </div>

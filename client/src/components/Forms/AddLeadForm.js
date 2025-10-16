@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { User, Building2, Mail, Phone, FileText, CheckCircle } from 'lucide-react';
+import ReactFlagsSelect from 'react-flags-select';
+import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode, isPossiblePhoneNumber } from 'libphonenumber-js';
+import { ALL_COUNTRY_CODES } from '../../utils/countryCodes';
+import Modal from '../Common/Modal';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const AddLeadForm = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +14,7 @@ const AddLeadForm = () => {
     designation: '',
     email: '',
     mobile: '',
+    country: 'US',
     industry: '',
     otherIndustry: '',
     hasReference: false,
@@ -15,6 +22,16 @@ const AddLeadForm = () => {
     useReference: '',
     details: ''
   });
+
+  const COUNTRY_CODES = ALL_COUNTRY_CODES;
+
+  const mobileInputRef = useRef(null);
+
+  const COUNTRY_LABELS = COUNTRY_CODES.reduce((acc, code) => {
+    acc[code] = code; // default label is ISO code
+    if (code === 'AE') acc[code] = 'UAE';
+    return acc;
+  }, {});
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,11 +53,66 @@ const AddLeadForm = () => {
     }
   };
 
+  const handleMobileChange = (e) => {
+    const { value } = e.target;
+    const calling = getCountryCallingCode(formData.country);
+    const digitsOnly = value.replace(/\D/g, '');
+
+    // If user cleared input, or input only represents the calling code, allow empty
+    if (value.trim() === '' || digitsOnly === '' || digitsOnly === calling) {
+      setFormData(prev => ({ ...prev, mobile: '' }));
+      if (errors.mobile) setErrors(prev => ({ ...prev, mobile: '' }));
+      return;
+    }
+
+    // Remove leading calling code if present to get national digits
+    let nationalDigits = digitsOnly;
+    if (nationalDigits.startsWith(calling)) {
+      nationalDigits = nationalDigits.slice(calling.length);
+    }
+
+    const formatter = new AsYouType();
+    const formattedInternational = formatter.input(`+${calling}${nationalDigits}`);
+
+    setFormData(prev => ({ ...prev, mobile: formattedInternational }));
+    if (errors.mobile) {
+      setErrors(prev => ({ ...prev, mobile: '' }));
+    }
+  };
+
+  const handleMobileBlur = () => {
+    const trimmed = (formData.mobile || '').trim();
+    if (!trimmed) return;
+    const parsed = parsePhoneNumberFromString(trimmed, formData.country);
+    if (parsed) {
+      setFormData(prev => ({ ...prev, mobile: parsed.formatInternational() }));
+    } else if (!trimmed.startsWith('+')) {
+      const calling = getCountryCallingCode(formData.country);
+      const withoutLeadingZeros = trimmed.replace(/^0+/, '');
+      setFormData(prev => ({ ...prev, mobile: `+${calling} ${withoutLeadingZeros}` }));
+    }
+  };
+
+  const handleCountrySelect = (code) => {
+    const calling = getCountryCallingCode(code);
+    setFormData(prev => ({ ...prev, country: code, mobile: `+${calling} ` }));
+    if (mobileInputRef.current) {
+      mobileInputRef.current.focus();
+    }
+    if (errors.mobile) {
+      setErrors(prev => ({ ...prev, mobile: '' }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
+    }
+
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Company name is required';
     }
 
     if (!formData.email.trim()) {
@@ -51,8 +123,11 @@ const AddLeadForm = () => {
 
     if (!formData.mobile.trim()) {
       newErrors.mobile = 'Mobile number is required';
-    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.mobile.replace(/\s/g, ''))) {
-      newErrors.mobile = 'Please enter a valid mobile number';
+    } else {
+      const parsed = parsePhoneNumberFromString(formData.mobile, formData.country);
+      if (!parsed || !parsed.isValid()) {
+        newErrors.mobile = 'Please enter a valid mobile number';
+      }
     }
 
     if (!formData.industry.trim()) {
@@ -85,6 +160,10 @@ const AddLeadForm = () => {
     setIsSubmitting(true);
 
     try {
+      // Prepare phone in E.164 format
+      const parsed = parsePhoneNumberFromString(formData.mobile, formData.country);
+      const e164Phone = parsed ? parsed.number : formData.mobile;
+
       // First, submit to Formspree for email notification
       const formspreeResponse = await fetch('https://formspree.io/f/xkgqvjkw', {
         method: 'POST',
@@ -96,7 +175,7 @@ const AddLeadForm = () => {
           companyName: formData.companyName,
           designation: formData.designation,
           email: formData.email,
-          mobile: formData.phone,
+          mobile: e164Phone,
           industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
           hasReference: formData.hasReference,
           referencePerson: formData.referencePerson,
@@ -114,8 +193,11 @@ const AddLeadForm = () => {
         throw new Error('Formspree submission failed');
       }
 
-      // Then, save to database via API
-      const apiResponse = await fetch('/api/leads', {
+      // Show success popup immediately after external submission succeeds
+      setIsSubmitted(true);
+
+      // Then, save to database via API (non-blocking for success UI)
+      const apiResponse = await fetch(`${API_BASE_URL}/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,8 +208,10 @@ const AddLeadForm = () => {
           companyName: formData.companyName,
           contactPerson: formData.fullName,
           email: formData.email,
-          phone: formData.phone,
+          phone: e164Phone,
           description: formData.details,
+          hasReference: !!formData.hasReference,
+          referencePerson: formData.hasReference ? formData.referencePerson : '',
           value: 0, // Default value, can be updated later
           currency: 'USD' // Default currency
         }),
@@ -147,7 +231,7 @@ const AddLeadForm = () => {
           companyName: formData.companyName,
           designation: formData.designation,
           email: formData.email,
-          mobile: formData.phone,
+          mobile: e164Phone,
           industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
           hasReference: formData.hasReference,
           referencePerson: formData.referencePerson,
@@ -163,7 +247,7 @@ const AddLeadForm = () => {
         localStorage.setItem('userLeads', JSON.stringify(existingLeads));
 
         // Dispatch custom event to notify dashboard of new lead
-        window.dispatchEvent(new CustomEvent('leadSubmitted'));
+        // window.dispatchEvent(new CustomEvent('leadSubmitted'));
 
         setIsSubmitted(true);
         // Reset form
@@ -172,7 +256,8 @@ const AddLeadForm = () => {
           companyName: '',
           designation: '',
           email: '',
-          phone: '',
+          mobile: '',
+          country: 'US',
           industry: '',
           otherIndustry: '',
           hasReference: false,
@@ -185,36 +270,38 @@ const AddLeadForm = () => {
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('There was an error submitting your lead. Please try again.');
+      // If external submission failed, inform the user; otherwise, we've already shown success
+      if (!isSubmitted) {
+        alert('There was an error submitting your lead. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          ✅ Thank you! Your lead has been submitted successfully.
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Your lead submission has been sent successfully. You can submit another lead if you have more referrals.
-        </p>
-        <button
-          onClick={() => setIsSubmitted(false)}
-          className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition duration-200 font-medium"
-        >
-          Submit Another Lead
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+      <Modal
+        isOpen={isSubmitted}
+        onClose={() => setIsSubmitted(false)}
+        title="Lead submitted successfully"
+        size="small"
+      >
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <p className="text-gray-600 mb-6">
+            Your lead has been sent successfully. You can submit another lead if you have more referrals.
+          </p>
+          <button
+            onClick={() => setIsSubmitted(false)}
+            className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition duration-200 font-medium"
+          >
+            Submit Another Lead
+          </button>
+        </div>
+      </Modal>
       <div className="text-center mb-8">
         <p className="text-gray-600">
           Help us connect with potential clients and earn rewards for successful referrals
@@ -259,10 +346,15 @@ const AddLeadForm = () => {
               name="companyName"
               value={formData.companyName}
               onChange={handleInputChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
+                errors.companyName ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter company name"
             />
           </div>
+          {errors.companyName && (
+            <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>
+          )}
         </div>
 
         {/* Designation */}
@@ -310,19 +402,34 @@ const AddLeadForm = () => {
           <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-2">
             Mobile Number *
           </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="tel"
-              id="mobile"
-              name="mobile"
-              value={formData.mobile}
-              onChange={handleInputChange}
-              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
-                errors.mobile ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter mobile number"
-            />
+          <div className="flex items-stretch gap-3">
+            <div className="w-28">
+              <ReactFlagsSelect
+                selected={formData.country}
+                onSelect={handleCountrySelect}
+                countries={COUNTRY_CODES}
+                customLabels={COUNTRY_LABELS}
+                selectedSize={14}
+                className="w-full"
+                placeholder="Country"
+              />
+            </div>
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="tel"
+                id="mobile"
+                name="mobile"
+                value={formData.mobile}
+                ref={mobileInputRef}
+                onChange={handleMobileChange}
+                onBlur={handleMobileBlur}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
+                  errors.mobile ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Enter mobile number"
+              />
+            </div>
           </div>
           {errors.mobile && (
             <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>

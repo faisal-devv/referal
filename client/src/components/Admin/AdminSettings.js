@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
     // General Settings
-    siteName: 'Referral Hub',
+    siteName: 'Referus.co',
     siteDescription: 'Professional referral management platform',
     contactEmail: 'admin@referralhub.com',
     supportEmail: 'support@referralhub.com',
@@ -71,7 +71,7 @@ const AdminSettings = () => {
     if (window.confirm('Are you sure you want to reset all settings to default values?')) {
       // Reset to default values
       setSettings({
-        siteName: 'Referral Hub',
+        siteName: 'Referus.co',
         siteDescription: 'Professional referral management platform',
         contactEmail: 'admin@referralhub.com',
         supportEmail: 'support@referralhub.com',

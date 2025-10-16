@@ -266,7 +266,7 @@ const HowItWorksPage = () => {
               Frequently Asked Questions
             </h2>
             <p className="text-xl text-gray-600">
-              Everything you need to know about Referral Hub
+              Everything you need to know about Referus.co
             </p>
           </div>
           <div className="space-y-8">
@@ -300,7 +300,7 @@ const HowItWorksPage = () => {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of professionals who are already earning with Referral Hub
+            Join thousands of professionals who are already earning with Referus.co
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { queriesAPI } from '../services/api';
 
 const ContactPage = () => {
   const navigate = useNavigate();
@@ -29,12 +30,17 @@ const ContactPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
-    console.log('Form submitted:', formData);
-    setIsSubmitted(true);
-    setTimeout(() => setIsSubmitted(false), 3000);
+    try {
+      await queriesAPI.createQuery(formData);
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+      setTimeout(() => setIsSubmitted(false), 3000);
+    } catch (err) {
+      console.error('Failed to submit query', err);
+      alert('Failed to send message. Please try again.');
+    }
   };
 
   const contactInfo = [
@@ -68,7 +74,7 @@ const ContactPage = () => {
               Contact Us
             </h1>
             <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-              Get in touch with our team. We're here to help you succeed with Referral Hub.
+              Get in touch with our team. We're here to help you succeed with Referus.co.
             </p>
           </div>
         </div>
@@ -177,38 +183,6 @@ const ContactPage = () => {
 
             {/* Contact Information */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Get in Touch
-              </h2>
-              <p className="text-gray-600 mb-8">
-                We're here to help you succeed. Choose the best way to reach us.
-              </p>
-              
-              <div className="space-y-8">
-                {contactInfo.map((info, index) => (
-                  <div key={index} className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {info.icon}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {info.title}
-                      </h3>
-                      <div className="space-y-1 mb-2">
-                        {info.details.map((detail, detailIndex) => (
-                          <p key={detailIndex} className="text-gray-600">
-                            {detail}
-                          </p>
-                        ))}
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        {info.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {/* Business Hours */}
               <div className="mt-12 bg-gray-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">

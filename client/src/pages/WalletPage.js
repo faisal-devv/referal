@@ -15,6 +15,8 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const WalletPage = () => {
   const [wallet, setWallet] = useState({
     usd: 0,
@@ -53,8 +55,8 @@ const WalletPage = () => {
     try {
       setLoading(true);
       const [walletResponse, withdrawalsResponse] = await Promise.all([
-        axios.get('/api/wallet'),
-        axios.get('/api/wallet/withdrawals')
+        axios.get(`${API_BASE_URL}/wallet`),
+        axios.get(`${API_BASE_URL}/wallet/withdrawals`)
       ]);
       
       setWallet(walletResponse.data);
@@ -70,7 +72,7 @@ const WalletPage = () => {
   const handleWithdrawalSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/wallet/withdraw', withdrawalForm);
+      await axios.post(`${API_BASE_URL}/wallet/withdraw`, withdrawalForm);
       toast.success('Withdrawal request submitted successfully!');
       setShowWithdrawalForm(false);
       setWithdrawalForm({

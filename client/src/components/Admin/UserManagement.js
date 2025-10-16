@@ -17,6 +17,8 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -38,7 +40,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users');
+      const response = await axios.get(`${API_BASE_URL}/users`);
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -76,7 +78,7 @@ const UserManagement = () => {
 
   const updateUserStatus = async (userId, isActive) => {
     try {
-      await axios.put(`/api/users/${userId}/status`, { isActive });
+      await axios.put(`${API_BASE_URL}/users/${userId}/status`, { isActive });
       toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`);
       fetchUsers();
     } catch (error) {
@@ -87,7 +89,7 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId, role) => {
     try {
-      await axios.put(`/api/users/${userId}/role`, { role });
+      await axios.put(`${API_BASE_URL}/users/${userId}/role`, { role });
       toast.success('User role updated successfully');
       fetchUsers();
     } catch (error) {

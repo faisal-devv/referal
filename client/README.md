@@ -1,6 +1,6 @@
-# Referral Hub Frontend
+# Referus.co Frontend
 
-This is the React frontend for the Referral Hub platform - a comprehensive referral management system.
+This is the React frontend for the Referus.co platform - a comprehensive referral management system.
 
 ## Features
 

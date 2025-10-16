@@ -22,6 +22,8 @@ import toast from 'react-hot-toast';
 import AddLeadForm from '../components/Forms/AddLeadForm';
 import ContactForm from '../components/Forms/ContactForm';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const DashboardPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,6 +37,8 @@ const DashboardPage = () => {
     // Show contact form modal
     setShowContactModal(true);
   };
+
+  console.log(user);
 
   const handleSupportSubmit = async (e) => {
     e.preventDefault();
@@ -177,7 +181,7 @@ const DashboardPage = () => {
       // Try to fetch leads from API first
       let apiLeads = [];
       try {
-        const response = await fetch('/api/leads', {
+        const response = await fetch(`${API_BASE_URL}/leads`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -276,7 +280,10 @@ const DashboardPage = () => {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => {
+                  setActiveTab('dashboard')
+                  fetchDashboardData();
+                }}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'dashboard'
                     ? 'border-blue-500 text-blue-600'
@@ -284,16 +291,6 @@ const DashboardPage = () => {
                 }`}
               >
                 Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('submit-lead')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'submit-lead'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Submit Lead
               </button>
               <button
                 onClick={() => setActiveTab('my-leads')}
@@ -305,26 +302,39 @@ const DashboardPage = () => {
               >
                 My Leads
               </button>
-              <button
-                onClick={() => setActiveTab('home-info')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'home-info'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Home Info
-              </button>
-              <button
-                onClick={() => setActiveTab('support')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'support'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Support
-              </button>
+              {user?.role === 'user' && (
+                <>
+                <button
+                  onClick={() => setActiveTab('submit-lead')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'submit-lead'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Submit Lead
+                </button>
+                <button
+                  onClick={() => setActiveTab('home-info')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'home-info'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Home Info
+                </button>
+                <button
+                  onClick={() => setActiveTab('support')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'support'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Support
+                </button></>
+              )}
             </nav>
           </div>
         </div>
@@ -379,7 +389,7 @@ const DashboardPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${isNaN(stats.totalEarnings) ? '0.00' : stats.totalEarnings.toFixed(2)}
+                  ${isNaN(stats.totalEarnings) ? '0.00' : user.wallet?.usd?.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -441,13 +451,15 @@ const DashboardPage = () => {
                     <p className="text-sm text-gray-500 mb-4">
                       Start earning by submitting your first lead
                     </p>
-                    <button
-                      onClick={() => setActiveTab('submit-lead')}
-                      className="inline-flex items-center px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Submit Lead
-                    </button>
+                    {user?.role === 'user' && (
+                      <button
+                        onClick={() => setActiveTab('submit-lead')}
+                        className="inline-flex items-center px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Submit Lead
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -657,11 +669,11 @@ const DashboardPage = () => {
             <div className="bg-gradient-to-r from-blue-700 to-blue-800 rounded-2xl p-8 text-white">
               <div className="max-w-4xl mx-auto text-center">
                 <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                  Welcome to Referral Hub
+                  Welcome to Referus.co
                 </h1>
                 <p className="text-xl text-blue-100 leading-relaxed mb-8">
                   Connect businesses with opportunities and earn commissions for successful referrals. 
-                  Join thousands of professionals already earning with Referral Hub.
+                  Join thousands of professionals already earning with Referus.co.
                 </p>
               </div>
             </div>
@@ -890,7 +902,7 @@ const DashboardPage = () => {
                   <span className="font-medium">Business Hours:</span> Monday - Friday, 9 AM - 6 PM EST
                 </div>
                 <div>
-                  <span className="font-medium">Email:</span> shoaibfm1988@gmail.com
+                  <span className="font-medium">Email:</span> contact@referus.co
                 </div>
                 <div>
                   <span className="font-medium">Priority:</span> All messages are treated with high priority

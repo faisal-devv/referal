@@ -4,6 +4,8 @@ import { Building2, CreditCard, Home, Wrench, Save, X } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const LeadForm = ({ onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
@@ -25,7 +27,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
-      const response = await axios.post('/api/leads', data);
+      const response = await axios.post(`${API_BASE_URL}/leads`, data);
       toast.success('Lead submitted successfully!');
       onSuccess?.(response.data);
       reset();
