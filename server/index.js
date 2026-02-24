@@ -37,6 +37,11 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Health check endpoint - before DB middleware so Docker/load balancers get 200 when process is up
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Ensure DB connection before handling requests to avoid race conditions
 app.use(async (req, res, next) => {
   try {
@@ -75,11 +80,6 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/queries', require('./routes/queries'));
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // Socket.io for real-time chat
 io.on('connection', (socket) => {
@@ -144,25 +144,34 @@ app.use('*', (req, res) => {
 
 // ... existing code ...
 
-// Conditional listening for local development
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
+// Start server
+const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0'; // Listen on all interfaces for Docker
+
+if (process.env.NODE_ENV === 'production') {
+  // Production mode: always listen (e.g., in Docker)
+  server.listen(PORT, HOST, () => {
+    console.log(`Server running on ${HOST}:${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+  });
+} else {
+  // Development mode: listen on localhost
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
-  
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is already in use.\n` +
-        `Try one of the following:\n` +
-        `- Kill the process: lsof -n -i :${PORT} | awk 'NR>1 {print $2}' | xargs -r kill -9\n` +
-        `- Or run on another port: PORT=5001 npm run dev`);
-      process.exit(1);
-    }
-    throw err;
-  });
 }
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use.\n` +
+      `Try one of the following:\n` +
+      `- Kill the process: lsof -n -i :${PORT} | awk 'NR>1 {print $2}' | xargs -r kill -9\n` +
+      `- Or run on another port: PORT=5001 npm run dev`);
+    process.exit(1);
+  }
+  throw err;
+});
 
 // **REQUIRED FOR VERCEL DEPLOYMENT**
 // Vercel handles the server listening internally for serverless functions.

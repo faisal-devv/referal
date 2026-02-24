@@ -1,0 +1,59 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: referralhub-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: referralhub
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    networks:
+      - referral_network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: referralhub-server
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/referralhub
+      CLIENT_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production}
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - referral_network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: referralhub-client
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    networks:
+      - referral_network
+
+volumes:
+  mongo_data:
+    driver: local
+  mongo_config:
+    driver: local
+
+networks:
+  referral_network:
+    driver: bridge
