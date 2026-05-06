@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-// Wallet-stored currencies (actual DB fields)
-const WALLET_KEYS = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
-
 // Fallback rates (1 USD = X) used when API is unavailable
 const FALLBACK_RATES = {
   USD:1, EUR:0.92, GBP:0.79, AED:3.674, SAR:3.75, JPY:149.5, CNY:7.24,
@@ -14,7 +11,7 @@ const FALLBACK_RATES = {
   PHP:56.3, TRY:30.5, ILS:3.67, QAR:3.64, KWD:0.307, BHD:0.377, OMR:0.385,
   JOD:0.71, LBP:89500, IQD:1310, IRR:42000, RUB:89.5, UAH:37.1, PLN:4.0,
   CZK:22.8, HUF:359, RON:4.57, BGN:1.8, HRK:6.93, RSD:108, ISK:138,
-  GEL:2.65, AMD:387, AZN:1.7, KZT:449, UZS:12400, GEL:2.65, MNT:3400,
+  GEL:2.65, AMD:387, AZN:1.7, KZT:449, UZS:12400, MNT:3400,
   CUP:24, DOP:57.3, GTQ:7.82, HNL:24.7, CRC:530, PAB:1, BOB:6.91,
   PYG:7290, VES:36.5, AWG:1.79, TTD:6.77, JMD:156, BBD:2, HTG:131,
   XOF:600, XAF:600, DZD:135, TZS:2525, UGX:3755, RWF:1265, ETB:56.5,

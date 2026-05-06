@@ -48,7 +48,7 @@ const AdminLeadsManagement = () => {
   ];
 
   useEffect(() => { fetchLeads(); }, []);
-  useEffect(() => { filterLeads(); }, [leads, searchTerm, statusFilter]);
+  useEffect(() => { filterLeads(); }, [leads, searchTerm, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchLeads = async () => {
     try {

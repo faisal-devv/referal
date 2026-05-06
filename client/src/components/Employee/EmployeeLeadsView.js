@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  User, 
-  Calendar, 
-  DollarSign,
+import {
+  FileText,
+  User,
   Eye,
   Edit,
-  Clock,
-  CheckCircle,
   AlertCircle,
-  Filter,
   Search,
   ChevronDown,
   X
@@ -47,7 +42,7 @@ const EmployeeLeadsView = () => {
 
   useEffect(() => {
     filterLeads();
-  }, [leads, searchTerm, statusFilter]);
+  }, [leads, searchTerm, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchLeads = async () => {
     try {

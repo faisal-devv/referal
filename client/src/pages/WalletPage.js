@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   DollarSign,
   CreditCard,
-  TrendingUp,
-  Download,
   Plus,
-  Eye,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  ChevronDown,
   ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

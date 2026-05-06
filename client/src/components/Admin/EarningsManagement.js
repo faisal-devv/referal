@@ -11,7 +11,7 @@ const WALLET_MAP = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 const AdminEarningsManagement = () => {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'superadmin';
-  const { currency, currencyInfo, convert, walletTotal, format, rates } = useCurrency();
+  const { currency, currencyInfo, walletTotal, format, rates } = useCurrency();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [amount, setAmount] = useState('');

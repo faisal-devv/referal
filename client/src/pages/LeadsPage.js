@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Search, Eye, Edit2, Building2, CreditCard, Home, Wrench,
-  CheckCircle, Clock, XCircle, AlertCircle, ArrowLeft, X, Save, Shield
+  Plus, Search, Eye, Edit2, Building2,
+  CheckCircle, Clock, XCircle, AlertCircle, ArrowLeft, X, Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -70,6 +70,7 @@ const LeadsPage = () => {
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { filterLeads(); }, [leads, searchTerm, statusFilter, categoryFilter]);
 
   const fetchLeads = async () => {
