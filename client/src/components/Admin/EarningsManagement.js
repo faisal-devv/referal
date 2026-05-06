@@ -31,7 +31,9 @@ const AdminEarningsManagement = () => {
       try {
         setLoading(true);
         const res = await usersAPI.getUsers();
-        const fetched = (res?.data || []).map(u => ({
+        const body = res?.data;
+        const userList = Array.isArray(body) ? body : (body?.data || []);
+        const fetched = userList.map(u => ({
           id: u._id,
           name: u.name,
           email: u.email,
