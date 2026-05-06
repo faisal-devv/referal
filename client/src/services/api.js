@@ -62,7 +62,7 @@ export const leadsAPI = {
   getLead: (id) => shouldUseDemoApi() ? Promise.resolve({ data: demoApi.getLeads().data.find(l => l._id === id) }) : api.get(`/leads/${id}`),
   createLead: (leadData) => shouldUseDemoApi() ? demoApi.createLead(leadData) : api.post('/leads', leadData),
   updateLeadStatus: (id, statusData) => shouldUseDemoApi() ? demoApi.updateLead(id, statusData) : api.put(`/leads/${id}/status`, statusData),
-  getAllLeads: () => shouldUseDemoApi() ? demoApi.getLeads() : api.get('/leads/admin/all')
+  getAllLeads: (params = {}) => shouldUseDemoApi() ? demoApi.getLeads() : api.get('/leads/admin/all', { params: { limit: 500, ...params } })
 };
 
 // Wallet API
@@ -85,7 +85,7 @@ export const chatAPI = {
 
 // Users API
 export const usersAPI = {
-  getUsers: () => shouldUseDemoApi() ? Promise.resolve({ data: [] }) : api.get('/users'),
+  getUsers: (params = {}) => shouldUseDemoApi() ? Promise.resolve({ data: [] }) : api.get('/users', { params: { limit: 500, ...params } }),
   getUser: (id) => shouldUseDemoApi() ? Promise.resolve({ data: null }) : api.get(`/users/${id}`),
   updateUserStatus: (id, statusData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - status update simulated' } }) : api.put(`/users/${id}/status`, statusData),
   updateUserRole: (id, roleData) => shouldUseDemoApi() ? Promise.resolve({ data: { success: true, message: 'Demo mode - role update simulated' } }) : api.put(`/users/${id}/role`, roleData)
