@@ -18,20 +18,34 @@ import { useAuth } from '../context/AuthContext';
 import ContactForm from '../components/Forms/ContactForm';
 import AuthModal from '../components/Auth/AuthModal';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 const HomePage = () => {
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [userStats, setUserStats] = useState(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users to dashboard
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (!isAuthenticated) {
+      setUserStats(null);
+      return;
     }
-  }, [isAuthenticated, navigate]);
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+    Promise.all([
+      fetch(`${API_BASE_URL}/leads`, { headers }).then(r => r.ok ? r.json() : []),
+      fetch(`${API_BASE_URL}/wallet`, { headers }).then(r => r.ok ? r.json() : {})
+    ]).then(([leads, wallet]) => {
+      const activeLeads = leads.filter(l =>
+        ['Pending', 'Contacted', 'Proposal Submitted'].includes(l.status)
+      ).length;
+      const successfulDeals = leads.filter(l => l.status === 'Deal Closed').length;
+      const totalEarnings = (wallet.usd || 0) + (wallet.aed || 0) + (wallet.euro || 0) + (wallet.sar || 0);
+      setUserStats({ totalEarnings, activeLeads, successfulDeals });
+    }).catch(() => {});
+  }, [isAuthenticated]);
 
   const handleIndustryClick = (industry) => {
     setSelectedIndustry(industry);
@@ -44,10 +58,13 @@ const HomePage = () => {
   };
 
   const handleReferNow = () => {
-    // Close modal and redirect to signup/login
     setIsModalOpen(false);
     setSelectedIndustry(null);
-    navigate('/register');
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      setIsAuthModalOpen(true);
+    }
   };
 
   const handleGetStartedClick = () => {
@@ -56,18 +73,10 @@ const HomePage = () => {
   };
 
   const handleContactUsClick = () => {
-    // Show contact form with smooth scroll
-    setShowContactForm(true);
-    // Smooth scroll to contact form after a brief delay
-    setTimeout(() => {
-      const contactFormElement = document.getElementById('contact-form-section');
-      if (contactFormElement) {
-        contactFormElement.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    }, 100);
+    const contactFormElement = document.getElementById('contact-form-section');
+    if (contactFormElement) {
+      contactFormElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   // Handle escape key to close modal
@@ -140,6 +149,13 @@ const HomePage = () => {
       description: "Building projects, infrastructure, renovations, and construction services",
       color: "bg-orange-500",
       image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      icon: <Shield className="h-12 w-12" />,
+      title: "Insurance Leads",
+      description: "Life, health, auto, and commercial insurance policies across all coverage types",
+      color: "bg-teal-500",
+      image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
     }
   ];
 
@@ -152,7 +168,7 @@ const HomePage = () => {
     {
       number: "02",
       title: "Submit Leads",
-      description: "Submit qualified leads in IT, Banking, Real Estate, or Construction sectors"
+      description: "Submit qualified leads in IT, Banking, Real Estate, Construction, or Insurance sectors"
     },
     {
       number: "03",
@@ -182,19 +198,31 @@ const HomePage = () => {
                 Join thousands of professionals already earning with Referus.co.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleGetStartedClick}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-yellow-400 text-blue-900 font-semibold rounded-lg hover:bg-yellow-300 transition duration-200 shadow-lg"
-                >
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </button>
-                <Link
-                  to="/how-it-works"
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-700 transition duration-200"
-                >
-                  Learn More
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex items-center justify-center px-8 py-4 bg-yellow-400 text-blue-900 font-semibold rounded-lg hover:bg-yellow-300 transition duration-200 shadow-lg"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleGetStartedClick}
+                      className="inline-flex items-center justify-center px-8 py-4 bg-yellow-400 text-blue-900 font-semibold rounded-lg hover:bg-yellow-300 transition duration-200 shadow-lg"
+                    >
+                      Get Started Free
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </button>
+                    <Link
+                      to="/how-it-works"
+                      className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-700 transition duration-200"
+                    >
+                      Learn More
+                    </Link>
+                  </>
+                )}
               </div>
               <div className="flex items-center space-x-8 text-sm">
                 <div className="flex items-center space-x-2">
@@ -216,16 +244,22 @@ const HomePage = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <span className="text-blue-100">Total Earnings</span>
-                    <span className="text-2xl font-bold">$12,450</span>
+                    <span className="text-2xl font-bold">
+                      {userStats ? `$${userStats.totalEarnings.toFixed(2)}` : '$12,450'}
+                    </span>
                   </div>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-blue-100">Active Leads</span>
-                      <span className="text-lg">24</span>
+                      <span className="text-lg">
+                        {userStats ? userStats.activeLeads : 24}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-blue-100">Successful Deals</span>
-                      <span className="text-lg">8</span>
+                      <span className="text-lg">
+                        {userStats ? userStats.successfulDeals : 8}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-blue-100">Commission Rate</span>
@@ -279,12 +313,12 @@ const HomePage = () => {
               Submit leads across multiple high-value industries and maximize your earning potential
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {industries.map((industry, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 onClick={() => handleIndustryClick(industry)}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-200 group overflow-hidden cursor-pointer transform hover:scale-105"
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-200 group overflow-hidden cursor-pointer transform hover:scale-105 w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)]"
               >
                 {/* Service Image */}
                 <div className="relative h-48 overflow-hidden">
@@ -325,18 +359,13 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* IT / Software Development */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-              <div className="flex items-center mb-4">
+              <div className="flex items-center mb-3">
                 <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
                   <Building2 className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">IT / Software Development</h3>
-                  <p className="text-lg font-semibold text-blue-600">5–10% Commission</p>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">IT / Software Development</h3>
               </div>
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                Earn 5–10% commission on the total amount of the project successfully closed.
-              </p>
+              <p className="text-gray-700 mb-4">Refer software, cloud, and tech projects to us and get rewarded for every successful deal.</p>
               <button
                 onClick={handleContactUsClick}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200 font-medium"
@@ -347,18 +376,13 @@ const HomePage = () => {
 
             {/* Construction */}
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
-              <div className="flex items-center mb-4">
+              <div className="flex items-center mb-3">
                 <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-4">
                   <Wrench className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Construction</h3>
-                  <p className="text-lg font-semibold text-orange-600">5–10% Commission</p>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">Construction</h3>
               </div>
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                Earn 5–10% commission on the labor cost of the project. Commission will not be calculated on material costs.
-              </p>
+              <p className="text-gray-700 mb-4">Connect us with building and infrastructure projects and earn on every closed contract.</p>
               <button
                 onClick={handleContactUsClick}
                 className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition duration-200 font-medium"
@@ -369,18 +393,13 @@ const HomePage = () => {
 
             {/* Real Estate */}
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
-              <div className="flex items-center mb-4">
+              <div className="flex items-center mb-3">
                 <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
                   <Home className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Real Estate</h3>
-                  <p className="text-lg font-semibold text-purple-600">1–3% Commission</p>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">Real Estate</h3>
               </div>
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                Earn 1–3% commission on property transactions successfully closed.
-              </p>
+              <p className="text-gray-700 mb-4">Refer property buyers, sellers, or renters and earn on every successfully closed transaction.</p>
               <button
                 onClick={handleContactUsClick}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition duration-200 font-medium"
@@ -391,21 +410,33 @@ const HomePage = () => {
 
             {/* Banking & Finance */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
-              <div className="flex items-center mb-4">
+              <div className="flex items-center mb-3">
                 <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
                   <CreditCard className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Banking & Finance</h3>
-                  <p className="text-lg font-semibold text-green-600">0.5–2% Commission</p>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">Banking & Finance</h3>
               </div>
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                Earn 0.5–2% commission depending on the financial product sold.
-              </p>
+              <p className="text-gray-700 mb-4">Introduce clients to financial products and services and get rewarded for each successful sale.</p>
               <button
                 onClick={handleContactUsClick}
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-200 font-medium"
+              >
+                For more info, contact us
+              </button>
+            </div>
+
+            {/* Insurance */}
+            <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
+              <div className="flex items-center mb-3">
+                <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mr-4">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Insurance</h3>
+              </div>
+              <p className="text-gray-700 mb-4">Refer clients for life, health, auto, and commercial insurance and earn on every successfully closed policy.</p>
+              <button
+                onClick={handleContactUsClick}
+                className="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium"
               >
                 For more info, contact us
               </button>
@@ -415,14 +446,11 @@ const HomePage = () => {
       </section>
 
       {/* Contact Form Section */}
-      {showContactForm && (
-        <section id="contact-form-section" className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ContactForm />
-          </div>
-        </section>
-      )}
-
+      <section id="contact-form-section" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ContactForm />
+        </div>
+      </section>
       {/* CTA Section */}
       <section className="py-20 bg-primary-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -434,13 +462,23 @@ const HomePage = () => {
             Start your first referral today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleGetStartedClick}
-              className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-lg hover:bg-gray-100 transition duration-200 shadow-lg"
-            >
-              Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-lg hover:bg-gray-100 transition duration-200 shadow-lg"
+              >
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            ) : (
+              <button
+                onClick={handleGetStartedClick}
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-lg hover:bg-gray-100 transition duration-200 shadow-lg"
+              >
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+            )}
             <button
               onClick={handleContactUsClick}
               className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-primary-600 transition duration-200"

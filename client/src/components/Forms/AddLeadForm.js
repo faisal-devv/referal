@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { User, Building2, Mail, Phone, FileText, CheckCircle } from 'lucide-react';
+import { User, Building2, Mail, Phone, FileText, CheckCircle, Info } from 'lucide-react';
 import ReactFlagsSelect from 'react-flags-select';
 import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode, isPossiblePhoneNumber } from 'libphonenumber-js';
+import toast from 'react-hot-toast';
 import { ALL_COUNTRY_CODES } from '../../utils/countryCodes';
 import Modal from '../Common/Modal';
 
@@ -17,7 +18,6 @@ const AddLeadForm = () => {
     country: 'US',
     industry: '',
     otherIndustry: '',
-    hasReference: false,
     referencePerson: '',
     useReference: '',
     details: ''
@@ -138,12 +138,12 @@ const AddLeadForm = () => {
       newErrors.otherIndustry = 'Please specify the industry';
     }
 
-    if (formData.hasReference && !formData.referencePerson.trim()) {
-      newErrors.referencePerson = 'Reference person name is required when checkbox is checked';
-    }
-
     if (!formData.useReference) {
       newErrors.useReference = 'Please select a reference option';
+    }
+
+    if (formData.useReference === 'use' && !formData.referencePerson.trim()) {
+      newErrors.referencePerson = 'Please enter the reference person\'s name';
     }
 
     setErrors(newErrors);
@@ -164,12 +164,10 @@ const AddLeadForm = () => {
       const parsed = parsePhoneNumberFromString(formData.mobile, formData.country);
       const e164Phone = parsed ? parsed.number : formData.mobile;
 
-      // First, submit to Formspree for email notification
-      const formspreeResponse = await fetch('https://formspree.io/f/xkgqvjkw', {
+      // Fire Formspree notification — non-blocking, failure does not stop submission
+      fetch('https://formspree.io/f/xkgqvjkw', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: formData.fullName,
           companyName: formData.companyName,
@@ -177,7 +175,7 @@ const AddLeadForm = () => {
           email: formData.email,
           mobile: e164Phone,
           industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
-          hasReference: formData.hasReference,
+          hasReference: formData.useReference === 'use',
           referencePerson: formData.referencePerson,
           useReference: formData.useReference,
           details: formData.details,
@@ -187,16 +185,9 @@ const AddLeadForm = () => {
           userAgent: navigator.userAgent,
           url: window.location.href
         }),
-      });
+      }).catch(() => {});
 
-      if (!formspreeResponse.ok) {
-        throw new Error('Formspree submission failed');
-      }
-
-      // Show success popup immediately after external submission succeeds
-      setIsSubmitted(true);
-
-      // Then, save to database via API (non-blocking for success UI)
+      // Save to database via API
       const apiResponse = await fetch(`${API_BASE_URL}/leads`, {
         method: 'POST',
         headers: {
@@ -210,10 +201,10 @@ const AddLeadForm = () => {
           email: formData.email,
           phone: e164Phone,
           description: formData.details,
-          hasReference: !!formData.hasReference,
-          referencePerson: formData.hasReference ? formData.referencePerson : '',
-          value: 0, // Default value, can be updated later
-          currency: 'USD' // Default currency
+          hasReference: formData.useReference === 'use',
+          referencePerson: formData.useReference === 'use' ? formData.referencePerson : '',
+          value: 0,
+          currency: 'USD'
         }),
       });
 
@@ -221,59 +212,26 @@ const AddLeadForm = () => {
         throw new Error('Database save failed');
       }
 
-      const savedLead = await apiResponse.json();
+      // Notify other tabs/components that a new lead was submitted
+      window.dispatchEvent(new CustomEvent('leadSubmitted'));
 
-      if (true) {
-        // Store lead locally for dashboard display (backup)
-        const newLead = {
-          id: savedLead._id,
-          fullName: formData.fullName,
-          companyName: formData.companyName,
-          designation: formData.designation,
-          email: formData.email,
-          mobile: e164Phone,
-          industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
-          hasReference: formData.hasReference,
-          referencePerson: formData.referencePerson,
-          useReference: formData.useReference,
-          details: formData.details,
-          status: 'Pending',
-          createdAt: new Date().toISOString()
-        };
-
-        // Get existing leads from localStorage
-        const existingLeads = JSON.parse(localStorage.getItem('userLeads') || '[]');
-        existingLeads.unshift(newLead); // Add new lead to beginning
-        localStorage.setItem('userLeads', JSON.stringify(existingLeads));
-
-        // Dispatch custom event to notify dashboard of new lead
-        // window.dispatchEvent(new CustomEvent('leadSubmitted'));
-
-        setIsSubmitted(true);
-        // Reset form
-        setFormData({
-          fullName: '',
-          companyName: '',
-          designation: '',
-          email: '',
-          mobile: '',
-          country: 'US',
-          industry: '',
-          otherIndustry: '',
-          hasReference: false,
-          referencePerson: '',
-          useReference: '',
-          details: ''
-        });
-      } else {
-        throw new Error('Submission failed');
-      }
+      setIsSubmitted(true);
+      setFormData({
+        fullName: '',
+        companyName: '',
+        designation: '',
+        email: '',
+        mobile: '',
+        country: 'US',
+        industry: '',
+        otherIndustry: '',
+        referencePerson: '',
+        useReference: '',
+        details: ''
+      });
     } catch (error) {
       console.error('Error submitting form:', error);
-      // If external submission failed, inform the user; otherwise, we've already shown success
-      if (!isSubmitted) {
-        alert('There was an error submitting your lead. Please try again.');
-      }
+      toast.error('There was an error submitting your lead. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -302,17 +260,28 @@ const AddLeadForm = () => {
           </button>
         </div>
       </Modal>
-      <div className="text-center mb-8">
-        <p className="text-gray-600">
-          Help us connect with potential clients and earn rewards for successful referrals
+      {/* Info banner */}
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-6">
+        <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-800">
+          <span className="font-semibold">You are filling in your client's details — not your own.</span>{' '}
+          Enter the information of the person or company you want to refer to us.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* ── Client Information section header ── */}
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">Client's Information</h3>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
         {/* Full Name */}
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name of the person being referred *
+            Client's Full Name *
           </label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -325,7 +294,7 @@ const AddLeadForm = () => {
               className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
                 errors.fullName ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="Enter full name"
+              placeholder="e.g. John Smith"
             />
           </div>
           {errors.fullName && (
@@ -336,7 +305,7 @@ const AddLeadForm = () => {
         {/* Company Name */}
         <div>
           <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-            Company Name
+            Client's Company Name *
           </label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -360,7 +329,8 @@ const AddLeadForm = () => {
         {/* Designation */}
         <div>
           <label htmlFor="designation" className="block text-sm font-medium text-gray-700 mb-2">
-            Designation
+            Client's Job Title / Designation
+            <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>
           </label>
           <input
             type="text"
@@ -369,14 +339,14 @@ const AddLeadForm = () => {
             value={formData.designation}
             onChange={handleInputChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-            placeholder="Enter designation/position"
+            placeholder="e.g. CEO, Procurement Manager"
           />
         </div>
 
         {/* Email */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
+            Client's Email Address *
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -389,7 +359,7 @@ const AddLeadForm = () => {
               className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
                 errors.email ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="Enter email address"
+              placeholder="client@theircompany.com"
             />
           </div>
           {errors.email && (
@@ -400,7 +370,7 @@ const AddLeadForm = () => {
         {/* Mobile Number */}
         <div>
           <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-2">
-            Mobile Number *
+            Client's Mobile Number *
           </label>
           <div className="flex items-stretch gap-3">
             <div className="w-28">
@@ -412,6 +382,8 @@ const AddLeadForm = () => {
                 selectedSize={14}
                 className="w-full"
                 placeholder="Country"
+                searchable
+                searchPlaceholder="Search country…"
               />
             </div>
             <div className="relative flex-1">
@@ -436,6 +408,13 @@ const AddLeadForm = () => {
           )}
         </div>
 
+        {/* ── Lead Details section header ── */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">Lead Details</h3>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
         {/* Industry / Sector */}
         <div>
           <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
@@ -454,6 +433,8 @@ const AddLeadForm = () => {
             <option value="Construction">Construction</option>
             <option value="IT / Software Development">IT / Software Development</option>
             <option value="Banking & Finance">Banking & Finance</option>
+            <option value="Real Estate">Real Estate</option>
+            <option value="Insurance">Insurance</option>
             <option value="Other">Other</option>
           </select>
           {errors.industry && (
@@ -484,25 +465,35 @@ const AddLeadForm = () => {
           </div>
         )}
 
-        {/* Reference Checkbox */}
-        <div className="border-t border-gray-200 pt-6">
-          <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              id="hasReference"
-              name="hasReference"
-              checked={formData.hasReference}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="hasReference" className="ml-2 text-sm font-medium text-gray-700">
-              Do you want to mention someone's reference for this lead?
-            </label>
-          </div>
+        {/* ── Reference section header ── */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">Reference</h3>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
 
-          {/* Dynamic Reference Person Field */}
-          {formData.hasReference && (
-            <div className="mb-4">
+        {/* Reference options */}
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">Should we mention someone's name as a reference when contacting this client?</p>
+
+          <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+            formData.useReference === 'use' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'
+          }`}>
+            <input
+              type="radio"
+              name="useReference"
+              value="use"
+              checked={formData.useReference === 'use'}
+              onChange={handleInputChange}
+              className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            />
+            <div>
+              <div className="text-sm font-medium text-gray-800">Yes, use a reference name when contacting the client</div>
+            </div>
+          </label>
+
+          {formData.useReference === 'use' && (
+            <div className="ml-4">
               <label htmlFor="referencePerson" className="block text-sm font-medium text-gray-700 mb-2">
                 Reference Person's Name *
               </label>
@@ -515,7 +506,7 @@ const AddLeadForm = () => {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
                   errors.referencePerson ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Enter reference person's name"
+                placeholder="e.g. Ahmed Al-Rashid"
               />
               {errors.referencePerson && (
                 <p className="mt-1 text-sm text-red-600">{errors.referencePerson}</p>
@@ -523,46 +514,32 @@ const AddLeadForm = () => {
             </div>
           )}
 
-          {/* Reference Radio Options */}
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="useReference"
-                name="useReference"
-                value="use"
-                checked={formData.useReference === 'use'}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              <label htmlFor="useReference" className="ml-2 text-sm font-medium text-gray-700">
-                Use reference
-              </label>
+          <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+            formData.useReference === 'dont_use' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'
+          }`}>
+            <input
+              type="radio"
+              name="useReference"
+              value="dont_use"
+              checked={formData.useReference === 'dont_use'}
+              onChange={handleInputChange}
+              className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            />
+            <div>
+              <div className="text-sm font-medium text-gray-800">No, contact the client without any reference</div>
             </div>
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="dontUseReference"
-                name="useReference"
-                value="dont_use"
-                checked={formData.useReference === 'dont_use'}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              <label htmlFor="dontUseReference" className="ml-2 text-sm font-medium text-gray-700">
-                Don't use any reference
-              </label>
-            </div>
-            {errors.useReference && (
-              <p className="text-sm text-red-600">{errors.useReference}</p>
-            )}
-          </div>
+          </label>
+
+          {errors.useReference && (
+            <p className="text-sm text-red-600">{errors.useReference}</p>
+          )}
         </div>
 
         {/* Details Text Area */}
         <div>
           <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-2">
-            Details about the lead
+            What is this client looking for?
+            <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>
           </label>
           <div className="relative">
             <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -573,7 +550,7 @@ const AddLeadForm = () => {
               onChange={handleInputChange}
               rows={4}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 resize-none"
-              placeholder="Explain what this person or company is looking for, or any extra details you'd like to share."
+              placeholder="e.g. They need a 5-floor commercial building constructed by Q4. Budget ~AED 2M."
             />
           </div>
         </div>

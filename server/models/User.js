@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'employee'],
+    enum: ['user', 'admin', 'superadmin', 'employee'],
     default: 'user'
   },
   isActive: {
@@ -38,6 +38,17 @@ const userSchema = new mongoose.Schema({
     euro: { type: Number, default: 0 },
     sar: { type: Number, default: 0 }
   },
+  preferredCurrency: {
+    type: String,
+    default: 'USD',
+    uppercase: true,
+    trim: true
+  },
+  lastLogin: {
+    type: Date
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
   createdAt: {
     type: Date,
     default: Date.now

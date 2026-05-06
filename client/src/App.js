@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import ProtectedRoute from './components/Layout/ProtectedRoute';
 import AdminProtectedRoute from './components/Layout/AdminProtectedRoute';
 import EmployeeProtectedRoute from './components/Layout/EmployeeProtectedRoute';
@@ -22,58 +23,52 @@ import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import EmployeePage from './pages/EmployeePage';
 import AdminLoginPage from './pages/AdminLoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import FAQPage from './pages/FAQPage';
 
 function App() {
   return (
     <Router>
+      <CurrencyProvider>
       <AuthProvider>
         <Routes>
-          {/* Admin Login Route - No Header/Footer */}
+          {/* Standalone Routes - No Header/Footer */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          
-          {/* All Other Routes - With Header/Footer */}
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/admin" element={
+            <AdminProtectedRoute>
+              <AdminPage />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/employee" element={
+            <EmployeeProtectedRoute>
+              <EmployeePage />
+            </EmployeeProtectedRoute>
+          } />
+
+          {/* Public/User Routes - With Header/Footer */}
           <Route path="/*" element={
             <div className="min-h-screen flex flex-col">
               <Header />
               <main className="flex-grow">
                 <Routes>
-                  {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/faq" element={<FAQPage />} />
                   <Route path="/add-lead" element={<AddLeadPage />} />
-          
-                  {/* Protected Routes */}
                   <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
+                    <ProtectedRoute><DashboardPage /></ProtectedRoute>
                   } />
                   <Route path="/leads" element={
-                    <ProtectedRoute>
-                      <LeadsPage />
-                    </ProtectedRoute>
+                    <ProtectedRoute><LeadsPage /></ProtectedRoute>
                   } />
                   <Route path="/wallet" element={
-                    <ProtectedRoute>
-                      <WalletPage />
-                    </ProtectedRoute>
+                    <ProtectedRoute><WalletPage /></ProtectedRoute>
                   } />
                   <Route path="/chat" element={
-                    <ProtectedRoute>
-                      <ChatPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/admin" element={
-                    <AdminProtectedRoute>
-                      <AdminPage />
-                    </AdminProtectedRoute>
-                  } />
-                  <Route path="/employee" element={
-                    <EmployeeProtectedRoute>
-                      <EmployeePage />
-                    </EmployeeProtectedRoute>
+                    <ProtectedRoute><ChatPage /></ProtectedRoute>
                   } />
                 </Routes>
               </main>
@@ -107,6 +102,7 @@ function App() {
           }}
         />
       </AuthProvider>
+      </CurrencyProvider>
     </Router>
   );
 }

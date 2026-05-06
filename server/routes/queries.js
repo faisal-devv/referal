@@ -1,19 +1,32 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const Query = require('../models/Query');
 
 const router = express.Router();
 
+const queryRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Too many submissions. Please try again later.' },
+  validate: { xForwardedForHeader: false },
+});
+
 // @route   POST /api/queries
 // @desc    Create a new contact query (public)
 // @access  Public
-router.post('/', async (req, res) => {
+router.post('/', queryRateLimit, [
+  body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2–100 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('subject').trim().isLength({ min: 2, max: 200 }).withMessage('Subject must be 2–200 characters'),
+  body('message').trim().isLength({ min: 10, max: 2000 }).withMessage('Message must be 10–2000 characters'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
   try {
     const { name, email, subject, message } = req.body;
-
-    if (!name || !email || !subject || !message) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-
     const query = await Query.create({ name, email, subject, message });
     return res.status(201).json(query);
   } catch (error) {

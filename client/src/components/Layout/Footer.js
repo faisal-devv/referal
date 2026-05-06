@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Linkedin, Instagram, Youtube } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -16,20 +16,20 @@ const Footer = () => {
               <span className="text-xl font-bold">Referus.co</span>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
-              Connect businesses with opportunities. Earn rewards for successful referrals in IT, Banking, Real Estate, and Construction sectors.
+              Connect businesses with opportunities. Earn rewards for successful referrals in IT, Banking, Real Estate, Construction, and Insurance sectors.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition duration-200">
+              <a href="https://www.facebook.com/share/1GkZwYU4kt/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition duration-200">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition duration-200">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition duration-200">
+              <a href="https://www.linkedin.com/company/referus-co/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition duration-200">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition duration-200">
+              <a href="https://www.instagram.com/referus.co?igsh=MXBhOG1lcnB4OHl3MQ==" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition duration-200">
                 <Instagram className="h-5 w-5" />
+              </a>
+              <a href="https://www.youtube.com/@ReferusPortal" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-400 transition duration-200">
+                <Youtube className="h-5 w-5" />
               </a>
             </div>
           </div>

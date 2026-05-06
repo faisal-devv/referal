@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
+import ForgotPasswordForm from './ForgotPasswordForm';
 
 const AuthModal = ({ isOpen, onClose, defaultToRegister = false }) => {
-  const [isLogin, setIsLogin] = useState(!defaultToRegister);
+  const [view, setView] = useState(defaultToRegister ? 'register' : 'login');
 
-  // Reset the form state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setIsLogin(!defaultToRegister);
+      setView(defaultToRegister ? 'register' : 'login');
     }
   }, [isOpen, defaultToRegister]);
 
@@ -25,10 +25,21 @@ const AuthModal = ({ isOpen, onClose, defaultToRegister = false }) => {
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
-        {isLogin ? (
-          <LoginForm onSwitchToRegister={() => setIsLogin(false)} onSuccess={onClose} />
-        ) : (
-          <RegisterForm onSwitchToLogin={() => setIsLogin(true)} onSuccess={onClose} />
+        {view === 'login' && (
+          <LoginForm
+            onSwitchToRegister={() => setView('register')}
+            onForgotPassword={() => setView('forgot')}
+            onSuccess={onClose}
+          />
+        )}
+        {view === 'register' && (
+          <RegisterForm
+            onSwitchToLogin={() => setView('login')}
+            onSuccess={() => setView('login')}
+          />
+        )}
+        {view === 'forgot' && (
+          <ForgotPasswordForm onSwitchToLogin={() => setView('login')} />
         )}
       </div>
     </div>

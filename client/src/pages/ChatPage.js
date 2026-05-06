@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Send, 
-  MessageCircle, 
-  Users, 
+import {
+  Send,
+  MessageCircle,
+  Users,
   Search,
   Phone,
   Mail,
@@ -13,26 +13,28 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const ChatPage = () => {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchConversations();
     initializeSocket();
-    
+
     return () => {
-      if (socket) {
-        socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
       }
     };
   }, []);
@@ -48,21 +50,20 @@ const ChatPage = () => {
   }, [messages]);
 
   const initializeSocket = () => {
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
-    
-    newSocket.on('connect', () => {
-      console.log('Connected to socket server');
+    const token = localStorage.getItem('token');
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+      auth: { token },
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
     });
 
     newSocket.on('newMessage', (message) => {
       setMessages(prev => [...prev, message]);
     });
 
-    newSocket.on('messageSent', (data) => {
-      console.log('Message sent:', data);
-    });
-
-    setSocket(newSocket);
+    socketRef.current = newSocket;
   };
 
   const fetchConversations = async () => {
@@ -90,7 +91,7 @@ const ChatPage = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation || !socket) return;
+    if (!newMessage.trim() || !selectedConversation || !socketRef.current) return;
 
     try {
       const messageData = {
@@ -98,13 +99,11 @@ const ChatPage = () => {
         message: newMessage.trim()
       };
 
-      // Send via API
       await axios.post(`${API_BASE_URL}/chat/send`, messageData);
-      
-      // Send via socket
-      socket.emit('sendMessage', {
+
+      socketRef.current.emit('sendMessage', {
         ...messageData,
-        senderId: selectedConversation._id // This should be current user ID
+        senderId: user._id
       });
 
       setNewMessage('');

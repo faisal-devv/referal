@@ -2,7 +2,9 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Withdrawal = require('../models/Withdrawal');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, superAdminOnly } = require('../middleware/auth');
+
+const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
 const router = express.Router();
 
@@ -37,12 +39,13 @@ router.post('/withdraw', protect, [
     }
 
     const { amount, currency, bankDetails } = req.body;
+    const walletKey = CURRENCY_WALLET_KEY[currency];
     const user = await User.findById(req.user._id);
 
     // Check if user has sufficient balance
-    if (user.wallet[currency.toLowerCase()] < amount) {
-      return res.status(400).json({ 
-        message: `Insufficient balance. Available: ${user.wallet[currency.toLowerCase()]} ${currency}` 
+    if ((user.wallet[walletKey] || 0) < amount) {
+      return res.status(400).json({
+        message: `Insufficient balance. Available: ${user.wallet[walletKey] || 0} ${currency}`
       });
     }
 
@@ -123,15 +126,19 @@ router.put('/admin/withdrawals/:id', protect, adminOnly, [
       withdrawal.adminNotes = adminNotes;
     }
 
-    // If approved, deduct from user's wallet
+    // If approved, atomically deduct from wallet to prevent race conditions
     if (status === 'approved') {
-      const user = await User.findById(withdrawal.user);
-      const currency = withdrawal.currency.toLowerCase();
-      
-      if (user.wallet[currency] >= withdrawal.amount) {
-        user.wallet[currency] -= withdrawal.amount;
-        await user.save();
-      } else {
+      const walletKey = CURRENCY_WALLET_KEY[withdrawal.currency];
+      const updated = await User.findOneAndUpdate(
+        {
+          _id: withdrawal.user,
+          [`wallet.${walletKey}`]: { $gte: withdrawal.amount }
+        },
+        { $inc: { [`wallet.${walletKey}`]: -withdrawal.amount } },
+        { new: true }
+      );
+
+      if (!updated) {
         return res.status(400).json({ message: 'Insufficient balance for withdrawal' });
       }
     }
@@ -148,9 +155,9 @@ router.put('/admin/withdrawals/:id', protect, adminOnly, [
 });
 
 // @route   PUT /api/wallet/admin/balance
-// @desc    Update user wallet balance (Admin only)
-// @access  Private/Admin
-router.put('/admin/balance', protect, adminOnly, [
+// @desc    Update user wallet balance (Super Admin only)
+// @access  Private/Super Admin
+router.put('/admin/balance', protect, superAdminOnly, [
   body('userId').isMongoId().withMessage('Valid user ID is required'),
   body('currency').isIn(['USD', 'AED', 'EUR', 'SAR']).withMessage('Invalid currency'),
   body('amount').isNumeric().withMessage('Amount must be a number'),
@@ -169,7 +176,7 @@ router.put('/admin/balance', protect, adminOnly, [
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const currencyKey = currency.toLowerCase();
+    const currencyKey = CURRENCY_WALLET_KEY[currency];
     const currentBalance = user.wallet[currencyKey];
 
     switch (operation) {

@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  DollarSign, 
-  CreditCard, 
-  TrendingUp, 
-  Download, 
+  DollarSign,
+  CreditCard,
+  TrendingUp,
+  Download,
   Plus,
   Eye,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const WalletPage = () => {
-  const [wallet, setWallet] = useState({
-    usd: 0,
-    aed: 0,
-    euro: 0,
-    sar: 0  // Changed from riyal to sar for consistency
-  });
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const navigate = useNavigate();
+  const { currency, format, walletTotal, currencyInfo } = useCurrency();
+  const [wallet, setWallet] = useState({ usd: 0, aed: 0, euro: 0, sar: 0 });
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [minWithdrawal, setMinWithdrawal] = useState(10);
+  const [processingDays, setProcessingDays] = useState('3-5');
   const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
   const [withdrawalForm, setWithdrawalForm] = useState({
     amount: '',
@@ -39,16 +40,15 @@ const WalletPage = () => {
     swiftCode: ''
   });
 
-  // Update withdrawal form currency when selected currency changes
-  useEffect(() => {
-    setWithdrawalForm(prev => ({
-      ...prev,
-      currency: selectedCurrency
-    }));
-  }, [selectedCurrency]);
-
   useEffect(() => {
     fetchWalletData();
+    fetch(`${API_BASE_URL}/admin/settings/public`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.minWithdrawalUSD) setMinWithdrawal(d.minWithdrawalUSD);
+        if (d.withdrawalProcessingDays) setProcessingDays(d.withdrawalProcessingDays);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchWalletData = async () => {
@@ -125,23 +125,9 @@ const WalletPage = () => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' }
-  ];
-
-  // Get current balance for selected currency
-  const getCurrentBalance = () => {
-    const currencyKey = selectedCurrency.toLowerCase();
-    return wallet[currencyKey] || 0;
-  };
-
-  // Get current currency info
-  const getCurrentCurrency = () => {
-    return currencies.find(c => c.code === selectedCurrency) || currencies[0];
-  };
+  // Total of all wallet balances in the globally selected display currency
+  const getCurrentBalance = () => walletTotal(wallet);
+  const getCurrentCurrency = () => currencyInfo;
 
   if (loading) {
     return (
@@ -156,6 +142,13 @@ const WalletPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-3"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
           <h1 className="text-3xl font-bold text-gray-900">Wallet</h1>
           <p className="text-gray-600 mt-2">
             Manage your earnings and withdrawal requests
@@ -166,26 +159,11 @@ const WalletPage = () => {
         <div className="mb-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Currency Selector */}
-              <div className="flex items-center gap-4">
-                <label htmlFor="currency-select" className="text-sm font-medium text-gray-700">
-                  Select Currency:
-                </label>
-                <div className="relative">
-                  <select
-                    id="currency-select"
-                    value={selectedCurrency}
-                    onChange={(e) => setSelectedCurrency(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                  >
-                    {currencies.map((currency) => (
-                      <option key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code} - {currency.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
+              {/* Currency note */}
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>Displaying in</span>
+                <span className="font-semibold text-gray-700">{currencyInfo.flag} {currencyInfo.code}</span>
+                <span className="text-xs text-gray-400">(change in top navbar)</span>
               </div>
 
               {/* Balance Display */}
@@ -193,7 +171,7 @@ const WalletPage = () => {
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-600">{getCurrentCurrency().name}</p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {getCurrentCurrency().symbol}{getCurrentBalance().toFixed(2)}
+                    {format(getCurrentBalance(), currency)}
                   </p>
                 </div>
                 <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -227,7 +205,7 @@ const WalletPage = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-900">Available Balance:</span>
                       <span className="text-lg font-bold text-blue-900">
-                        {getCurrentCurrency().symbol}{getCurrentBalance().toFixed(2)} {withdrawalForm.currency}
+                        {format(getCurrentBalance(), currency)}
                       </span>
                     </div>
                   </div>
@@ -242,11 +220,16 @@ const WalletPage = () => {
                         value={withdrawalForm.amount}
                         onChange={(e) => setWithdrawalForm({...withdrawalForm, amount: e.target.value})}
                         required
-                        min="1"
+                        min={minWithdrawal}
                         max={getCurrentBalance()}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="Enter amount"
+                        placeholder={`Min $${minWithdrawal} USD`}
                       />
+                      {parseFloat(withdrawalForm.amount) > 0 && parseFloat(withdrawalForm.amount) < minWithdrawal && (
+                        <p className="mt-1 text-sm text-red-600">
+                          Minimum withdrawal is ${minWithdrawal} USD
+                        </p>
+                      )}
                       {parseFloat(withdrawalForm.amount) > getCurrentBalance() && (
                         <p className="mt-1 text-sm text-red-600">
                           Amount cannot exceed available balance
@@ -262,9 +245,14 @@ const WalletPage = () => {
                         onChange={(e) => setWithdrawalForm({...withdrawalForm, currency: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
-                        {currencies.map((currency) => (
-                          <option key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name}
+                        {[
+                          { code: 'USD', name: 'US Dollar' },
+                          { code: 'AED', name: 'UAE Dirham' },
+                          { code: 'EUR', name: 'Euro' },
+                          { code: 'SAR', name: 'Saudi Riyal' },
+                        ].map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code} - {c.name}
                           </option>
                         ))}
                       </select>
@@ -356,6 +344,9 @@ const WalletPage = () => {
                     </div>
                   </div>
 
+                  <p className="text-xs text-gray-500 pt-2">
+                    Minimum withdrawal: ${minWithdrawal} USD · Processed within {processingDays} business days
+                  </p>
                   <div className="flex items-center justify-end space-x-4 pt-4">
                     <button
                       type="button"
@@ -383,13 +374,13 @@ const WalletPage = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Balance</span>
                 <span className="font-semibold">
-                  ${(wallet.usd + wallet.aed + wallet.euro + wallet.riyal).toFixed(2)}
+                  {format(walletTotal(wallet), currency)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Available for Withdrawal</span>
                 <span className="font-semibold text-green-600">
-                  ${(wallet.usd + wallet.aed + wallet.euro + wallet.riyal).toFixed(2)}
+                  {format(walletTotal(wallet), currency)}
                 </span>
               </div>
               <div className="flex justify-between items-center">

@@ -1,25 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Save, Users, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Save, Users, RefreshCw, Search, X, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersAPI, walletAPI } from '../../services/api';
+import { useCurrency } from '../../context/CurrencyContext';
+import { useAuth } from '../../context/AuthContext';
+
+// Wallet currency → DB key mapping
+const WALLET_MAP = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
 const AdminEarningsManagement = () => {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'superadmin';
+  const { currency, currencyInfo, convert, walletTotal, format, rates } = useCurrency();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [earnings, setEarnings] = useState({
-    usd: 0,
-    aed: 0,
-    euro: 0,
-    sar: 0
-  });
+  const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(u =>
+      u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [search, users]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
         const res = await usersAPI.getUsers();
-        const fetchedUsers = (res?.data || []).map(u => ({
+        const fetched = (res?.data || []).map(u => ({
           id: u._id,
           name: u.name,
           email: u.email,
@@ -27,12 +39,11 @@ const AdminEarningsManagement = () => {
             usd: u.wallet?.usd || 0,
             aed: u.wallet?.aed || 0,
             euro: u.wallet?.euro || 0,
-            sar: u.wallet?.sar || 0
-          }
+            sar: u.wallet?.sar || 0,
+          },
         }));
-        setUsers(fetchedUsers);
-      } catch (err) {
-        console.error('Failed to load users:', err);
+        setUsers(fetched);
+      } catch {
         toast.error('Failed to load users');
       } finally {
         setLoading(false);
@@ -41,258 +52,193 @@ const AdminEarningsManagement = () => {
     fetchUsers();
   }, []);
 
+  // When a user is selected, pre-fill the field with their current balance in the selected currency
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    setEarnings({
-      usd: user.wallet?.usd || 0,
-      aed: user.wallet?.aed || 0,
-      euro: user.wallet?.euro || 0,
-      sar: user.wallet?.sar || 0
-    });
+    const total = walletTotal(user.wallet);
+    setAmount(total.toFixed(2));
   };
 
-  const handleEarningsChange = (currency, value) => {
-    const numValue = parseFloat(value) || 0;
-    setEarnings(prev => ({
-      ...prev,
-      [currency]: numValue
-    }));
-  };
-
-  const handleSaveEarnings = async () => {
-    if (!selectedUser) {
-      toast.error('Please select a user first');
-      return;
+  // When currency changes, re-convert the current amount to the new currency
+  useEffect(() => {
+    if (selectedUser) {
+      const total = walletTotal(selectedUser.wallet);
+      setAmount(total.toFixed(2));
     }
+  }, [currency]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSave = async () => {
+    if (!selectedUser) { toast.error('Please select a user first'); return; }
+    const entered = parseFloat(amount) || 0;
+
+    // Determine which wallet field to update
+    // If selected currency maps to a wallet field, store directly; otherwise convert to USD
+    const walletKey = WALLET_MAP[currency];
+    const storeCurrency = walletKey ? currency : 'USD';
+    const storeKey = walletKey || 'usd';
+
+    const inUSD = entered / (rates[currency] || 1);
+    const storeVal = parseFloat((inUSD * (rates[storeCurrency] || 1)).toFixed(2));
 
     setLoading(true);
     try {
-      const updates = [
-        { currency: 'USD', amount: Number(earnings.usd) || 0 },
-        { currency: 'AED', amount: Number(earnings.aed) || 0 },
-        { currency: 'EUR', amount: Number(earnings.euro) || 0 },
-        { currency: 'SAR', amount: Number(earnings.sar) || 0 }
-      ];
+      await walletAPI.updateWalletBalance({
+        userId: selectedUser.id,
+        currency: storeCurrency,
+        amount: storeVal,
+        operation: 'set',
+      });
 
-      await Promise.all(
-        updates.map(u => walletAPI.updateWalletBalance({
-          userId: selectedUser.id,
-          currency: u.currency,
-          amount: u.amount,
-          operation: 'set'
-        }))
-      );
-
-      // Reflect changes locally
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
-        ...u,
-        wallet: {
-          usd: updates[0].amount,
-          aed: updates[1].amount,
-          euro: updates[2].amount,
-          sar: updates[3].amount
-        }
-      } : u));
-
-      setSelectedUser(prev => prev ? {
-        ...prev,
-        wallet: {
-          usd: updates[0].amount,
-          aed: updates[1].amount,
-          euro: updates[2].amount,
-          sar: updates[3].amount
-        }
-      } : prev);
+      // Update local state
+      const updatedWallet = { ...selectedUser.wallet, [storeKey]: storeVal };
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, wallet: updatedWallet } : u));
+      setSelectedUser(prev => ({ ...prev, wallet: updatedWallet }));
 
       toast.success(`Earnings updated for ${selectedUser.name}`);
-    } catch (error) {
-      console.error('Error saving earnings:', error);
+    } catch {
       toast.error('Failed to save earnings');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResetEarnings = () => {
-    setEarnings({
-      usd: 0,
-      aed: 0,
-      euro: 0,
-      sar: 0
-    });
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Earnings Management</h2>
-            <p className="text-gray-600 mt-1">Manage user earnings and incentives</p>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ height: 'calc(100vh - 130px)' }}>
+      {/* User list */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-0">
+        <div className="px-5 py-4 border-b border-gray-100 flex-shrink-0 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-800">Select User</h3>
+            <p className="text-xs text-gray-400">{filteredUsers.length} / {users.length} users</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <DollarSign className="h-8 w-8 text-blue-600" />
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name or email…"
+              className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          {loading && users.length === 0 && <p className="text-sm text-gray-500 p-3">Loading users...</p>}
+          {!loading && filteredUsers.length === 0 && (
+            <p className="text-sm text-gray-500 p-3">{search ? 'No users match your search' : 'No users found'}</p>
+          )}
+          {filteredUsers.map(user => (
+            <button
+              key={user.id}
+              onClick={() => handleUserSelect(user)}
+              className={`w-full text-left px-3 py-2.5 rounded-lg border transition duration-150 ${
+                selectedUser?.id === user.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-transparent hover:border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+              <div className="text-xs text-gray-400">{user.email}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{format(walletTotal(user.wallet), currency)} total</div>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* User Selection */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Select User</h3>
-          <div className="space-y-2">
-            {loading && users.length === 0 && (
-              <div className="text-sm text-gray-500">Loading users...</div>
-            )}
-            {!loading && users.length === 0 && (
-              <div className="text-sm text-gray-500">No users found</div>
-            )}
-            {users.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => handleUserSelect(user)}
-                className={`w-full text-left p-3 rounded-lg border transition duration-200 ${
-                  selectedUser?.id === user.id
-                    ? 'border-blue-500 bg-blue-50 text-blue-900'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="font-medium">{user.name}</div>
-                <div className="text-sm text-gray-500">{user.email}</div>
-              </button>
-            ))}
-          </div>
+      {/* Earnings editor */}
+      <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-0 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <h3 className="text-sm font-semibold text-gray-800">
+            {selectedUser ? `Earnings — ${selectedUser.name}` : 'Select a user to manage earnings'}
+          </h3>
+          {selectedUser && (
+            <button
+              onClick={() => setAmount('0')}
+              className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1.5 transition-colors"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
 
-        {/* Earnings Management */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {selectedUser ? `Earnings for ${selectedUser.name}` : 'Select a user to manage earnings'}
-            </h3>
-            {selectedUser && (
-              <button
-                onClick={handleResetEarnings}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center space-x-1"
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span>Reset</span>
-              </button>
-            )}
-          </div>
-
-          {selectedUser ? (
-            <div className="space-y-4">
-              {/* USD */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {!isSuperAdmin ? (
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3">
+              <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center">
+                <Lock className="h-7 w-7 text-amber-600" />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">Super Admin access required</p>
+              <p className="text-xs text-gray-400 max-w-xs">
+                Only Super Admins can modify user earnings. Contact your Super Admin to make changes.
+              </p>
+            </div>
+          ) : selectedUser ? (
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  USD Earnings
+                  {currency} Earnings
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={earnings.usd}
-                    onChange={(e) => handleEarningsChange('usd', e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* AED */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AED Earnings
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">د.إ</span>
-                  <input
-                    type="number"
-                    value={earnings.aed}
-                    onChange={(e) => handleEarningsChange('aed', e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* EUR */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  EUR Earnings
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
-                  <input
-                    type="number"
-                    value={earnings.euro}
-                    onChange={(e) => handleEarningsChange('euro', e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* SAR */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SAR Earnings
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">ر.س</span>
-                  <input
-                    type="number"
-                    value={earnings.sar}
-                    onChange={(e) => handleEarningsChange('sar', e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* Total Display */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Total Earnings:</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    ${((earnings.usd || 0) + (earnings.aed || 0) + (earnings.euro || 0) + (earnings.sar || 0)).toFixed(2)}
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium select-none">
+                    {currencyInfo.symbol}
                   </span>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    onFocus={e => e.target.select()}
+                    onBlur={e => {
+                      const v = parseFloat(e.target.value);
+                      setAmount(isNaN(v) ? '0.00' : v.toFixed(2));
+                    }}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
                 </div>
+                {!WALLET_MAP[currency] && (
+                  <p className="text-xs text-amber-600 mt-1.5">
+                    {currency} is not a wallet currency — amount will be converted and stored in USD.
+                  </p>
+                )}
               </div>
 
-              {/* Save Button */}
+              <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                <span className="text-sm text-gray-600">Total after save</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {format(parseFloat(amount) || 0, currency)}
+                </span>
+              </div>
+
               <div className="flex justify-end">
                 <button
-                  onClick={handleSaveEarnings}
+                  onClick={handleSave}
                   disabled={loading}
-                  className="inline-flex items-center px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                   ) : (
-                    <Save className="h-5 w-5 mr-2" />
+                    <Save className="h-4 w-4" />
                   )}
-                  <span>{loading ? 'Saving...' : 'Save Earnings'}</span>
+                  {loading ? 'Saving...' : 'Save Earnings'}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Select a user from the list to manage their earnings</p>
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">Select a user from the list to manage their earnings</p>
             </div>
           )}
         </div>

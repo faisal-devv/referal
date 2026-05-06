@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  FileText, 
-  CheckCircle, 
-  Clock, 
+import {
+  TrendingUp,
+  DollarSign,
+  Wallet,
+  FileText,
+  CheckCircle,
+  Clock,
   AlertCircle,
   Plus,
   Eye,
@@ -14,11 +16,14 @@ import {
   Building2,
   CreditCard,
   Wrench,
+  Shield,
   ChevronDown,
-  Send
+  Send,
+  X
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 import AddLeadForm from '../components/Forms/AddLeadForm';
 import ContactForm from '../components/Forms/ContactForm';
 
@@ -26,9 +31,10 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const { currency, walletTotal, currencyInfo, format } = useCurrency();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showContactModal, setShowContactModal] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [walletData, setWalletData] = useState({ usd: 0, aed: 0, euro: 0, sar: 0 });
   const [supportMessage, setSupportMessage] = useState('');
   const [isSupportSubmitting, setIsSupportSubmitting] = useState(false);
   const [supportSubmitted, setSupportSubmitted] = useState(false);
@@ -37,8 +43,6 @@ const DashboardPage = () => {
     // Show contact form modal
     setShowContactModal(true);
   };
-
-  console.log(user);
 
   const handleSupportSubmit = async (e) => {
     e.preventDefault();
@@ -50,36 +54,17 @@ const DashboardPage = () => {
     setIsSupportSubmitting(true);
 
     try {
-      const response = await fetch('https://formspree.io/f/xkgqvjkw', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'support_message',
-          name: user?.name || 'Dashboard User',
-          email: user?.email || 'user@example.com',
-          message: supportMessage,
-          subject: 'Support Request from Dashboard',
-          notificationEmail: 'shoaibfm1988@gmail.com',
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          url: window.location.href
-        }),
+      await axios.post(`${API_BASE_URL}/queries`, {
+        name: user?.name || 'Dashboard User',
+        email: user?.email || '',
+        subject: 'Support Request from Dashboard',
+        message: supportMessage,
       });
 
-      if (response.ok) {
-        setSupportMessage('');
-        setSupportSubmitted(true);
-        toast.success('✅ Your message has been sent. We\'ll get back to you soon.');
-        
-        // Reset success message after 5 seconds
-        setTimeout(() => {
-          setSupportSubmitted(false);
-        }, 5000);
-      } else {
-        throw new Error('Submission failed');
-      }
+      setSupportMessage('');
+      setSupportSubmitted(true);
+      toast.success('Your message has been sent. We\'ll get back to you soon.');
+      setTimeout(() => setSupportSubmitted(false), 5000);
     } catch (error) {
       console.error('Error submitting support message:', error);
       toast.error('Failed to send message. Please try again.');
@@ -95,25 +80,10 @@ const DashboardPage = () => {
   });
   const [recentLeads, setRecentLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewLead, setViewLead] = useState(null);
 
-  // Currency data and helper functions
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' }
-  ];
-
-  // Get current balance for selected currency
-  const getCurrentBalance = () => {
-    const currencyKey = selectedCurrency.toLowerCase();
-    return user?.wallet?.[currencyKey] || 0;
-  };
-
-  // Get current currency info
-  const getCurrentCurrency = () => {
-    return currencies.find(c => c.code === selectedCurrency) || currencies[0];
-  };
+  const getCurrentBalance = () => walletTotal(walletData);
+  const getCurrentCurrency = () => currencyInfo;
 
   // Industries data for Home Info tab
   const industries = [
@@ -144,6 +114,13 @@ const DashboardPage = () => {
       description: "Building projects, infrastructure, renovations, and construction services",
       color: "bg-orange-500",
       image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      icon: <Shield className="h-12 w-12" />,
+      title: "Insurance Leads",
+      description: "Life, health, auto, and commercial insurance policies across all coverage types",
+      color: "bg-teal-500",
+      image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
     }
   ];
 
@@ -177,53 +154,40 @@ const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Try to fetch leads from API first
-      let apiLeads = [];
-      try {
-        const response = await fetch(`${API_BASE_URL}/leads`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
 
+      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+
+      // Fetch leads from API, fall back to localStorage
+      let leads = [];
+      try {
+        const response = await fetch(`${API_BASE_URL}/leads`, { headers });
         if (response.ok) {
-          apiLeads = await response.json();
+          leads = await response.json();
         }
-      } catch (error) {
-        console.log('API fetch failed, falling back to localStorage:', error);
+      } catch {
+        leads = JSON.parse(localStorage.getItem('userLeads') || '[]');
       }
 
-      // Use API leads if available, otherwise fall back to localStorage
-      const localLeads = JSON.parse(localStorage.getItem('userLeads') || '[]');
-      const leads = apiLeads.length > 0 ? apiLeads : localLeads;
-      
-      // Load wallet data from localStorage or default to zero
-      const walletData = JSON.parse(localStorage.getItem(`wallet_${user?.email}`) || '{}');
-      const wallet = {
-        usd: walletData.usd || 0,
-        aed: walletData.aed || 0,
-        euro: walletData.euro || 0,
-        sar: walletData.sar || 0
-      };
+      // Fetch wallet from API
+      let wallet = { usd: 0, aed: 0, euro: 0, sar: 0 };
+      try {
+        const walletResponse = await fetch(`${API_BASE_URL}/wallet`, { headers });
+        if (walletResponse.ok) {
+          wallet = await walletResponse.json();
+        }
+      } catch {
+        // wallet stays at zero defaults
+      }
+      setWalletData(wallet);
 
-      // Calculate stats
       const totalLeads = leads.length;
-      const activeLeads = leads.filter(lead => 
+      const activeLeads = leads.filter(lead =>
         ['Pending', 'Contacted', 'Proposal Submitted'].includes(lead.status)
       ).length;
       const successfulDeals = leads.filter(lead => lead.status === 'Deal Closed').length;
-      // Calculate total earnings with proper number handling
       const totalEarnings = (wallet.usd || 0) + (wallet.aed || 0) + (wallet.euro || 0) + (wallet.sar || 0);
 
-      setStats({
-        totalLeads,
-        activeLeads,
-        successfulDeals,
-        totalEarnings
-      });
-
-      // Get recent leads (last 5)
+      setStats({ totalLeads, activeLeads, successfulDeals, totalEarnings });
       setRecentLeads(leads.slice(0, 5));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -389,7 +353,7 @@ const DashboardPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${isNaN(stats.totalEarnings) ? '0.00' : user.wallet?.usd?.toFixed(2)}
+                  ${stats.totalEarnings.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -403,12 +367,12 @@ const DashboardPage = () => {
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Recent Leads</h2>
-                  <a
-                    href="/leads"
+                  <Link
+                    to="/leads"
                     className="text-blue-700 hover:text-blue-800 text-sm font-medium"
                   >
                     View all
-                  </a>
+                  </Link>
                 </div>
               </div>
               <div className="divide-y divide-gray-200">
@@ -426,18 +390,18 @@ const DashboardPage = () => {
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 mt-1">
-                            {lead.category} • {lead.currency === 'USD' && '$'}
-                            {lead.currency === 'EUR' && '€'}
-                            {lead.currency === 'AED' && 'د.إ '}
-                            {lead.currency === 'SAR' && 'ر.س '}
-                            {lead.value?.toLocaleString() || 'N/A'}
+                            {lead.category} • {lead.currency} {lead.value?.toLocaleString() || '0'}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
                             Submitted {new Date(lead.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600">
+                          <button
+                            onClick={() => setViewLead(lead)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            title="View details"
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
                         </div>
@@ -479,20 +443,20 @@ const DashboardPage = () => {
                   <Plus className="h-4 w-4 mr-3" />
                   Submit New Lead
                 </button>
-                <a
-                  href="/leads"
+                <Link
+                  to="/leads"
                   className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200"
                 >
                   <Eye className="h-4 w-4 mr-3" />
                   View All Leads
-                </a>
-                <a
-                  href="/wallet"
+                </Link>
+                <Link
+                  to="/wallet"
                   className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200"
                 >
                   <DollarSign className="h-4 w-4 mr-3" />
                   Check Wallet
-                </a>
+                </Link>
                 <button
                   onClick={() => setActiveTab('support')}
                   className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200"
@@ -507,49 +471,27 @@ const DashboardPage = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Wallet Balance</h3>
               
-              {/* Currency Selector */}
-              <div className="mb-4">
-                <label htmlFor="dashboard-currency-select" className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Currency:
-                </label>
-                <div className="relative">
-                  <select
-                    id="dashboard-currency-select"
-                    value={selectedCurrency}
-                    onChange={(e) => setSelectedCurrency(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 w-full"
-                  >
-                    {currencies.map((currency) => (
-                      <option key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code} - {currency.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
               {/* Balance Display */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-900">{getCurrentCurrency().name}</p>
+                    <p className="text-sm font-medium text-blue-900">{currencyInfo.flag} {currencyInfo.name}</p>
                     <p className="text-2xl font-bold text-blue-900">
-                      {getCurrentCurrency().symbol}{getCurrentBalance().toFixed(2)}
+                      {currencyInfo.symbol}{getCurrentBalance().toFixed(2)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <DollarSign className="h-6 w-6 text-blue-600" />
+                    <Wallet className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
               </div>
 
-              <a
-                href="/wallet"
+              <Link
+                to="/wallet"
                 className="block w-full text-center px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition duration-200"
               >
                 View Full Wallet
-              </a>
+              </Link>
             </div>
 
             {/* Tips */}
@@ -615,23 +557,23 @@ const DashboardPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {recentLeads.length > 0 ? (
-                    recentLeads.map((lead, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                    recentLeads.map((lead) => (
+                      <tr key={lead._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {lead.fullName || 'N/A'}
+                          {lead.contactPerson || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {lead.companyName || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {lead.industry || 'N/A'}
+                          {lead.category || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Pending
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
+                            {lead.status || 'Pending'}
                           </span>
                         </td>
                       </tr>
@@ -688,11 +630,11 @@ const DashboardPage = () => {
                   Submit leads across multiple high-value industries and maximize your earning potential
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="flex flex-wrap justify-center gap-8">
                 {industries.map((industry, index) => (
                   <div
                     key={index}
-                    className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition duration-200 group"
+                    className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition duration-200 group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)]"
                   >
                     {/* Service Image */}
                     <div className="relative h-48 overflow-hidden rounded-lg mb-4">
@@ -816,6 +758,28 @@ const DashboardPage = () => {
                     For more info, contact us
                   </button>
                 </div>
+
+                {/* Insurance */}
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mr-4">
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">Insurance</h3>
+                      <p className="text-lg font-semibold text-teal-600">2–8% Commission</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    Earn 2–8% commission on life, health, auto, and commercial insurance policies successfully closed.
+                  </p>
+                  <button
+                    onClick={handleContactUsClick}
+                    className="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium"
+                  >
+                    For more info, contact us
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -914,10 +878,57 @@ const DashboardPage = () => {
 
         {/* Contact Modal */}
         {showContactModal && (
-          <ContactForm 
-            isModal={true} 
-            onClose={() => setShowContactModal(false)} 
+          <ContactForm
+            isModal={true}
+            onClose={() => setShowContactModal(false)}
           />
+        )}
+
+        {/* View Lead Modal */}
+        {viewLead && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h3 className="text-lg font-bold text-gray-900">Lead Details</h3>
+                <button onClick={() => setViewLead(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-3">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(viewLead.status)}`}>
+                    {viewLead.status}
+                  </span>
+                </div>
+                {[
+                  { label: 'Company',   value: viewLead.companyName },
+                  { label: 'Contact',   value: viewLead.contactPerson },
+                  { label: 'Email',     value: viewLead.email },
+                  { label: 'Phone',     value: viewLead.phone },
+                  { label: 'Industry',  value: viewLead.category },
+                  { label: 'Value',     value: `${viewLead.currency} ${viewLead.value?.toLocaleString() || '0'}` },
+                  { label: 'Submitted', value: new Date(viewLead.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs font-medium text-gray-500 mb-0.5">{label}</div>
+                    <div className="text-sm text-gray-900">{value || '—'}</div>
+                  </div>
+                ))}
+                {viewLead.hasReference && viewLead.referencePerson && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs font-medium text-gray-500 mb-0.5">Reference Person</div>
+                    <div className="text-sm text-gray-900">{viewLead.referencePerson}</div>
+                  </div>
+                )}
+                {viewLead.description && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs font-medium text-gray-500 mb-0.5">Notes</div>
+                    <div className="text-sm text-gray-900">{viewLead.description}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
