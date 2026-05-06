@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Send, CheckCircle } from 'lucide-react';
 import { queriesAPI } from '../services/api';
 
 const ContactPage = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,16 +10,6 @@ const ContactPage = () => {
     message: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleGetStartedClick = () => {
-    // Redirect to signup page
-    navigate('/register');
-  };
-
-  const handleContactUsClick = () => {
-    // Open lead submission form directly
-    window.open('https://formspree.io/f/xkgqvjkw', '_blank');
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -42,27 +30,6 @@ const ContactPage = () => {
       alert('Failed to send message. Please try again.');
     }
   };
-
-  const contactInfo = [
-    {
-      icon: <Mail className="h-6 w-6" />,
-      title: "Email Us",
-      details: ["info@referralhub.com", "support@referralhub.com"],
-      description: "Send us an email and we'll respond within 24 hours"
-    },
-    {
-      icon: <Phone className="h-6 w-6" />,
-      title: "Call Us",
-      details: ["+1 (555) 123-4567", "+1 (555) 987-6543"],
-      description: "Speak directly with our team during business hours"
-    },
-    {
-      icon: <MapPin className="h-6 w-6" />,
-      title: "Visit Us",
-      details: ["123 Business Street", "Suite 100, City, State 12345"],
-      description: "Come visit our office for in-person meetings"
-    }
-  ];
 
   return (
     <div className="min-h-screen">

@@ -11,7 +11,7 @@ const Header = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [defaultToRegister, setDefaultToRegister] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  const { currency, walletTotal, currencyInfo, format } = useCurrency();
+  const { currency, walletTotal, format } = useCurrency();
   const navigate = useNavigate();
 
   const handleLogout = () => {

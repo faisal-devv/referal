@@ -4,7 +4,6 @@ import {
   Users,
   DollarSign,
   Clock,
-  CheckCircle,
   TrendingUp,
   AlertCircle,
   Activity

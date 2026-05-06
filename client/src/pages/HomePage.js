@@ -159,29 +159,6 @@ const HomePage = () => {
     }
   ];
 
-  const steps = [
-    {
-      number: "01",
-      title: "Sign Up",
-      description: "Create your free account in minutes with just your email and basic information"
-    },
-    {
-      number: "02",
-      title: "Submit Leads",
-      description: "Submit qualified leads in IT, Banking, Real Estate, Construction, or Insurance sectors"
-    },
-    {
-      number: "03",
-      title: "Track Progress",
-      description: "Monitor your leads through our platform with real-time status updates"
-    },
-    {
-      number: "04",
-      title: "Get Paid",
-      description: "Receive commissions when your leads convert into successful deals"
-    }
-  ];
-
   return (
     <div className="min-h-screen">
       {/* Hero Section */}

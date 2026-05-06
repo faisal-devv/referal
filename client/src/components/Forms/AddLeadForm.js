@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { User, Building2, Mail, Phone, FileText, CheckCircle, Info } from 'lucide-react';
 import ReactFlagsSelect from 'react-flags-select';
-import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode, isPossiblePhoneNumber } from 'libphonenumber-js';
+import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode } from 'libphonenumber-js';
 import toast from 'react-hot-toast';
 import { ALL_COUNTRY_CODES } from '../../utils/countryCodes';
 import Modal from '../Common/Modal';

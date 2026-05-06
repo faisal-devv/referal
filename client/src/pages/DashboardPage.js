@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  TrendingUp,
   DollarSign,
   Wallet,
   FileText,
   CheckCircle,
   Clock,
-  AlertCircle,
   Plus,
   Eye,
   MessageCircle,
@@ -17,7 +15,6 @@ import {
   CreditCard,
   Wrench,
   Shield,
-  ChevronDown,
   Send,
   X
 } from 'lucide-react';
@@ -31,7 +28,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { currency, walletTotal, currencyInfo, format } = useCurrency();
+  const { walletTotal, currencyInfo } = useCurrency();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showContactModal, setShowContactModal] = useState(false);
   const [walletData, setWalletData] = useState({ usd: 0, aed: 0, euro: 0, sar: 0 });
@@ -83,7 +80,6 @@ const DashboardPage = () => {
   const [viewLead, setViewLead] = useState(null);
 
   const getCurrentBalance = () => walletTotal(walletData);
-  const getCurrentCurrency = () => currencyInfo;
 
   // Industries data for Home Info tab
   const industries = [

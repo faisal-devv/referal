@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users,
-  Mail,
-  Calendar,
   Eye,
   CheckCircle,
   Search,
@@ -36,6 +34,7 @@ const AdminUsersManagement = () => {
 
   useEffect(() => { fetchUsers(); }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { filterUsers(); }, [users, searchTerm, statusFilter]);
 
   const fetchUsers = async () => {

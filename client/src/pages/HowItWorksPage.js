@@ -12,7 +12,6 @@ import {
   Wrench,
   Shield
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import ContactForm from '../components/Forms/ContactForm';
 import AuthModal from '../components/Auth/AuthModal';
 
@@ -27,7 +26,6 @@ const DEFAULT_RATES = {
 };
 
 const HowItWorksPage = () => {
-  const navigate = useNavigate();
   const [showContactForm, setShowContactForm] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [rates, setRates] = useState(DEFAULT_RATES);
@@ -171,17 +169,6 @@ const HowItWorksPage = () => {
         "Commercial fleet coverage",
         "Business liability insurance"
       ]
-    }
-  ];
-
-  const faqs = [
-    {
-      question: "How quickly do you respond?",
-      answer: "We typically respond to all inquiries within 24 hours during business days."
-    },
-    {
-      question: "Is there a mobile app?",
-      answer: "Currently, we offer a fully responsive web application that works perfectly on all mobile devices. A dedicated mobile app is in development and will be available soon."
     }
   ];
 

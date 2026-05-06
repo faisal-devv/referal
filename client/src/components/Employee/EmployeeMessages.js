@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MessageCircle, 
-  Send, 
-  Clock, 
-  User, 
+import {
+  MessageCircle,
+  Send,
+  Clock,
+  User,
   Mail,
   Phone,
-  Calendar,
   CheckCircle,
-  AlertCircle,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -29,7 +26,7 @@ const EmployeeMessages = () => {
 
   useEffect(() => {
     filterMessages();
-  }, [messages, searchTerm, statusFilter]);
+  }, [messages, searchTerm, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMessages = async () => {
     try {

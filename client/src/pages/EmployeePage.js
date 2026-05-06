@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  MessageCircle, 
+import {
+  FileText,
+  MessageCircle,
   Menu,
   X,
-  User,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  Send,
-  Eye
+  User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, Mail, Lock, User, Shield, Crown } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -8,7 +8,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, error, demoLoginUser } = useAuth();
+  const { login, loading, error } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -20,13 +20,6 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login(formData.email, formData.password);
-    if (result?.success && typeof onSuccess === 'function') {
-      onSuccess();
-    }
-  };
-
-  const handleDemoLogin = (userType) => {
-    const result = demoLoginUser(userType);
     if (result?.success && typeof onSuccess === 'function') {
       onSuccess();
     }

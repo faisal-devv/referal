@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Send,
   MessageCircle,
-  Users,
   Search,
   Phone,
-  Mail,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Mail
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';

@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  User, 
-  Mail, 
-  Calendar, 
-  Clock,
+import {
   CheckCircle,
   AlertCircle,
   Save,
-  Edit,
   Eye,
   EyeOff
 } from 'lucide-react';

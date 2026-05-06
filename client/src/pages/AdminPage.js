@@ -17,7 +17,6 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import CurrencySelector from '../components/UI/CurrencySelector';
 import axios from 'axios';
-import toast from 'react-hot-toast';
 
 import AdminLeadsManagement from '../components/Admin/AdminLeadsManagement';
 import AdminUsersManagement from '../components/Admin/AdminUsersManagement';
