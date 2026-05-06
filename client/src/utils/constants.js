@@ -6,7 +6,8 @@ export const LEAD_CATEGORIES = [
   { value: 'IT', label: 'IT Services', color: 'bg-blue-100 text-blue-800' },
   { value: 'Banking', label: 'Banking & Finance', color: 'bg-green-100 text-green-800' },
   { value: 'Real Estate', label: 'Real Estate', color: 'bg-purple-100 text-purple-800' },
-  { value: 'Construction', label: 'Construction', color: 'bg-orange-100 text-orange-800' }
+  { value: 'Construction', label: 'Construction', color: 'bg-orange-100 text-orange-800' },
+  { value: 'Insurance', label: 'Insurance', color: 'bg-teal-100 text-teal-800' }
 ];
 
 // Lead Status
@@ -41,7 +42,8 @@ export const COMMISSION_RATES = {
   IT: { min: 5, max: 10 },
   Banking: { min: 8, max: 15 },
   'Real Estate': { min: 10, max: 15 },
-  Construction: { min: 5, max: 12 }
+  Construction: { min: 5, max: 12 },
+  Insurance: { min: 2, max: 8 }
 };
 
 // User Roles

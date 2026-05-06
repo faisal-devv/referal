@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Building2, CreditCard, Home, Wrench, Save, X } from 'lucide-react';
+import { Building2, CreditCard, Home, Wrench, Shield, Save, X } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -14,7 +14,8 @@ const LeadForm = ({ onClose, onSuccess }) => {
     { value: 'IT', label: 'IT Services', icon: <Building2 className="h-5 w-5" />, color: 'bg-blue-500' },
     { value: 'Banking', label: 'Banking & Finance', icon: <CreditCard className="h-5 w-5" />, color: 'bg-green-500' },
     { value: 'Real Estate', label: 'Real Estate', icon: <Home className="h-5 w-5" />, color: 'bg-purple-500' },
-    { value: 'Construction', label: 'Construction', icon: <Wrench className="h-5 w-5" />, color: 'bg-orange-500' }
+    { value: 'Construction', label: 'Construction', icon: <Wrench className="h-5 w-5" />, color: 'bg-orange-500' },
+    { value: 'Insurance', label: 'Insurance', icon: <Shield className="h-5 w-5" />, color: 'bg-teal-500' }
   ];
 
   const currencies = [

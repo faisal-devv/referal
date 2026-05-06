@@ -71,7 +71,7 @@ const AdminLoginPage = () => {
         
         // Check if user is admin or employee
         const user = JSON.parse(localStorage.getItem('user'));
-        if (user?.role === 'admin') {
+        if (user?.role === 'admin' || user?.role === 'superadmin') {
           navigate(from, { replace: true });
         } else if (user?.role === 'employee') {
           navigate('/employee', { replace: true });

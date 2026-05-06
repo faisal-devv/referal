@@ -1,7 +1,33 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Lead = require('../models/Lead');
+const User = require('../models/User');
+const Settings = require('../models/Settings');
 const { protect, adminOnly } = require('../middleware/auth');
+
+// Maps lead currency to the User.wallet field name
+const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
+
+const calculateCommissionAmount = async (lead) => {
+  const settings = await Settings.findById('global');
+  if (!settings?.commissionRates || lead.value <= 0) return 0;
+
+  let rates = settings.commissionRates.get(lead.category);
+  if (!rates) {
+    // Case-insensitive partial match
+    settings.commissionRates.forEach((v, k) => {
+      if (!rates) {
+        const kl = k.toLowerCase();
+        const cl = lead.category.toLowerCase();
+        if (kl.includes(cl) || cl.includes(kl)) rates = v;
+      }
+    });
+  }
+
+  if (!rates) return 0;
+  const midRate = (rates.min + rates.max) / 2;
+  return parseFloat(((lead.value * midRate) / 100).toFixed(2));
+};
 
 const router = express.Router();
 
@@ -54,13 +80,42 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/leads/admin/all
+// @desc    Get all leads (Admin only, paginated)
+// @access  Private/Admin
+router.get('/admin/all', protect, adminOnly, async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (req.query.status) filter.status = req.query.status;
+
+    const [leads, total] = await Promise.all([
+      Lead.find(filter)
+        .populate('user', 'name email')
+        .populate('notes.addedBy', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Lead.countDocuments(filter)
+    ]);
+
+    res.json({ data: leads, total, page, totalPages: Math.ceil(total / limit), limit });
+  } catch (error) {
+    console.error('Get all leads error:', error);
+    res.status(500).json({ message: 'Server error fetching all leads' });
+  }
+});
+
 // @route   GET /api/leads/:id
 // @desc    Get single lead
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id).populate('user', 'name email');
-    
+
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
@@ -74,6 +129,48 @@ router.get('/:id', protect, async (req, res) => {
   } catch (error) {
     console.error('Get lead error:', error);
     res.status(500).json({ message: 'Server error fetching lead' });
+  }
+});
+
+// @route   PUT /api/leads/:id
+// @desc    Update lead details (owner only, Pending leads)
+// @access  Private
+router.put('/:id', protect, [
+  body('companyName').optional().trim().isLength({ min: 1, max: 100 }),
+  body('contactPerson').optional().trim().isLength({ min: 1, max: 50 }),
+  body('email').optional().isEmail().normalizeEmail(),
+  body('phone').optional().trim().isLength({ min: 1 }),
+  body('category').optional().trim().isLength({ min: 1, max: 100 }),
+  body('description').optional().trim().isLength({ max: 500 }),
+  body('hasReference').optional().isBoolean(),
+  body('referencePerson').optional().trim().isLength({ max: 100 }),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) return res.status(404).json({ message: 'Lead not found' });
+    if (lead.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to edit this lead' });
+    }
+    if (lead.status !== 'Pending') {
+      return res.status(400).json({ message: 'Only Pending leads can be edited' });
+    }
+
+    const allowed = ['companyName', 'contactPerson', 'email', 'phone', 'category', 'description', 'hasReference', 'referencePerson'];
+    allowed.forEach(field => {
+      if (req.body[field] !== undefined) lead[field] = req.body[field];
+    });
+
+    await lead.save();
+    await lead.populate('user', 'name email');
+    res.json(lead);
+  } catch (error) {
+    console.error('Update lead error:', error);
+    res.status(500).json({ message: 'Server error updating lead' });
   }
 });
 
@@ -103,13 +200,26 @@ router.put('/:id/status', protect, adminOnly, [
       return res.status(404).json({ message: 'Lead not found' });
     }
 
+    const wasNotClosed = lead.status !== 'Deal Closed';
     lead.status = status;
-    
+
     if (note) {
       lead.notes.push({
         note,
         addedBy: req.user._id
       });
+    }
+
+    // Calculate and award commission the first time a lead reaches Deal Closed
+    if (status === 'Deal Closed' && wasNotClosed) {
+      const commissionAmount = await calculateCommissionAmount(lead);
+      if (commissionAmount > 0) {
+        lead.commission = commissionAmount;
+        const walletKey = CURRENCY_WALLET_KEY[lead.currency] || 'usd';
+        await User.findByIdAndUpdate(lead.user, {
+          $inc: { [`wallet.${walletKey}`]: commissionAmount }
+        });
+      }
     }
 
     await lead.save();
@@ -120,23 +230,6 @@ router.put('/:id/status', protect, adminOnly, [
   } catch (error) {
     console.error('Update lead status error:', error);
     res.status(500).json({ message: 'Server error updating lead status' });
-  }
-});
-
-// @route   GET /api/leads/admin/all
-// @desc    Get all leads (Admin only)
-// @access  Private/Admin
-router.get('/admin/all', protect, adminOnly, async (req, res) => {
-  try {
-    const leads = await Lead.find()
-      .populate('user', 'name email')
-      .populate('notes.addedBy', 'name')
-      .sort({ createdAt: -1 });
-    
-    res.json(leads);
-  } catch (error) {
-    console.error('Get all leads error:', error);
-    res.status(500).json({ message: 'Server error fetching all leads' });
   }
 });
 

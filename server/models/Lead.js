@@ -40,9 +40,9 @@ const leadSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Please provide lead description'],
     trim: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    maxlength: [500, 'Description cannot be more than 500 characters'],
+    default: ''
   },
   hasReference: {
     type: Boolean,

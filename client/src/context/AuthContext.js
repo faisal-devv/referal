@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { demoLogin, isDemoMode, getDemoUserType, demoUsers } from '../utils/demoData';
@@ -64,7 +63,6 @@ const initialState = {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const navigate = useNavigate();
 
   // Set up axios defaults
   useEffect(() => {
@@ -88,10 +86,6 @@ export const AuthProvider = ({ children }) => {
               type: 'LOGIN_SUCCESS',
               payload: user
             });
-            // Redirect to dashboard if user is on homepage
-            if (window.location.pathname === '/') {
-              navigate('/dashboard');
-            }
             return;
           }
         }
@@ -103,10 +97,6 @@ export const AuthProvider = ({ children }) => {
             type: 'LOGIN_SUCCESS',
             payload: response.data
           });
-          // Redirect to dashboard if user is on homepage
-          if (window.location.pathname === '/') {
-            navigate('/dashboard');
-          }
         } catch (error) {
           localStorage.removeItem('token');
           delete axios.defaults.headers.common['Authorization'];
@@ -135,7 +125,6 @@ export const AuthProvider = ({ children }) => {
       });
       
       toast.success('Login successful!');
-      navigate('/dashboard');
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
@@ -149,22 +138,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (name, email, password) => {
-    console.log('Registering user:', name, email, password);
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, { name, email, password });
-      const { token, ...userData } = response.data;
-      
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: userData
-      });
-      
-      toast.success('Registration successful!');
-      navigate('/dashboard');
+      await axios.post(`${API_BASE_URL}/auth/register`, { name, email, password });
+      dispatch({ type: 'LOGOUT' });
+      toast.success('Account created! Please sign in.');
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
@@ -209,7 +187,6 @@ export const AuthProvider = ({ children }) => {
       });
       
       toast.success(`Demo login successful! Welcome ${userData.name}`);
-      navigate('/dashboard');
       return { success: true };
     } catch (error) {
       const message = error.message || 'Demo login failed';

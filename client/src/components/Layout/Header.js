@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { Menu, X, User, LogOut, Wallet, MessageCircle } from 'lucide-react';
 import AuthModal from '../Auth/AuthModal';
+import CurrencySelector from '../UI/CurrencySelector';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [defaultToRegister, setDefaultToRegister] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { currency, walletTotal, currencyInfo, format } = useCurrency();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -57,18 +60,23 @@ const Header = () => {
               <Link to="/contact" className="text-gray-700 hover:text-blue-700 transition duration-200">
                 Contact
               </Link>
+              <Link to="/faq" className="text-gray-700 hover:text-blue-700 transition duration-200">
+                FAQ
+              </Link>
             </nav>
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <CurrencySelector variant="light" />
+                  <Link
+                    to="/wallet"
+                    className="flex items-center space-x-2 text-sm text-gray-700 hover:text-blue-700 transition-colors"
+                  >
                     <Wallet className="h-4 w-4" />
-                    <span>
-                      ${user?.wallet?.usd?.toFixed(2) || '0.00'} USD
-                    </span>
-                  </div>
+                    <span>{format(walletTotal(user?.wallet || {}), currency)}</span>
+                  </Link>
                   
                   <div className="relative group">
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition duration-200">
@@ -103,7 +111,7 @@ const Header = () => {
                         <MessageCircle className="inline h-4 w-4 mr-2" />
                         Chat
                       </Link>
-                      {user?.role === 'admin' && (
+                      {(user?.role === 'admin' || user?.role === 'superadmin') && (
                         <Link
                           to="/admin"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -182,6 +190,13 @@ const Header = () => {
                 >
                   Contact
                 </Link>
+                <Link
+                  to="/faq"
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-700 transition duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  FAQ
+                </Link>
                 
                 {isAuthenticated ? (
                   <div className="border-t border-gray-200 pt-4">
@@ -216,7 +231,7 @@ const Header = () => {
                     >
                       Chat
                     </Link>
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'superadmin') && (
                       <Link
                         to="/admin"
                         className="block px-3 py-2 text-gray-700 hover:text-blue-700 transition duration-200"

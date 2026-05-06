@@ -2,9 +2,95 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 const { protect } = require('../middleware/auth');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const router = express.Router();
+
+const buildSystemPrompt = (settings) => {
+  const rates = {};
+  if (settings?.commissionRates) {
+    settings.commissionRates.forEach((v, k) => { rates[k] = v; });
+  }
+  const rateLines = Object.entries(rates).map(([industry, r]) =>
+    `  - ${industry}: ${r.min}–${r.max}%`
+  ).join('\n') || '  - IT Services (5-10%), Construction (5-10%), Real Estate (1-3%), Banking & Finance (0.5-2%), Insurance (2-8%)';
+
+  const minUSD = settings?.minWithdrawalUSD ?? 10;
+  const processingDays = settings?.withdrawalProcessingDays ?? '3-5';
+  const email = settings?.supportEmail ?? 'contact@referus.co';
+  const responseHours = settings?.supportResponseHours ?? 24;
+
+  return `You are a friendly support assistant for Referus.co, a referral platform where users earn commissions by referring business leads.
+
+Key facts:
+- Free to join, no hidden fees. Users submit leads and earn when a deal closes.
+- Commission rates by industry:\n${rateLines}
+- Wallet currencies: USD, AED, EUR, SAR. Viewable in 150+ world currencies.
+- Minimum withdrawal: $${minUSD} USD. Processing: ${processingDays} business days.
+- Lead statuses: Pending → Contacted → Proposal Submitted → Deal Closed / Client Refused
+- No limit on lead submissions. Global platform — any country accepted.
+- One account per person. Password reset via email (link valid 1 hour).
+- Support response time: within ${responseHours} hours on business days.
+- Contact: ${email}
+
+Keep answers short and friendly. If a question needs account-specific information (e.g. specific withdrawal status, a specific lead dispute, billing issue), reply with only: FORWARD_TO_SUPPORT`;
+};
+
+// @route   POST /api/chat/bot
+router.post('/bot', [
+  body('message').trim().notEmpty().withMessage('Message is required').isLength({ max: 1000 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg });
+
+  const { message, history = [] } = req.body;
+
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.json({
+        reply: "Our AI assistant is temporarily unavailable. Your query has been forwarded to our support team — they'll contact you within 24 hours.",
+        forwarded: true,
+      });
+    }
+
+    const settings = await Settings.findById('global');
+    const systemPrompt = buildSystemPrompt(settings);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.1-flash-lite-preview',
+      systemInstruction: systemPrompt,
+    });
+
+    // Build prior chat history (max last 10 turns)
+    const chatHistory = history.slice(-10).map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    const chat = model.startChat({ history: chatHistory });
+    const result = await chat.sendMessage(message);
+    const reply = result.response.text().trim();
+
+    if (reply.includes('FORWARD_TO_SUPPORT')) {
+      return res.json({
+        reply: "Your question needs a look at your specific account. I've forwarded it to our support team and they'll get back to you within 24 hours. Anything else I can help with?",
+        forwarded: true,
+      });
+    }
+
+    res.json({ reply, forwarded: false });
+  } catch (err) {
+    console.error('Bot error:', err.message);
+    res.json({
+      reply: "I'm having a little trouble right now. Your query has been forwarded to our support team — they'll contact you within 24 hours.",
+      forwarded: true,
+    });
+  }
+});
 
 // @route   POST /api/chat/send
 // @desc    Send a message

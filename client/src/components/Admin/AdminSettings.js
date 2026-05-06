@@ -1,358 +1,336 @@
-import React, { useState } from 'react';
-import { 
-  Settings, 
-  Save, 
-  RefreshCw,
-  Shield,
-  Bell,
-  Database,
-  Globe,
-  Mail,
-  DollarSign
+import React, { useState, useEffect } from 'react';
+import {
+  Save, RefreshCw, Shield, DollarSign,
+  Building2, CreditCard, Home, Wrench,
+  Percent, Mail, Globe, UserPlus, Wallet, Loader
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
+const DEFAULT_RATES = {
+  'IT / Software Development': { min: 5,   max: 10 },
+  'Banking & Finance':         { min: 0.5, max: 2  },
+  'Real Estate':               { min: 1,   max: 3  },
+  'Construction':              { min: 5,   max: 10 },
+  'Insurance':                 { min: 2,   max: 8  },
+};
+
+const industryMeta = {
+  'IT / Software Development': { icon: Building2, color: 'bg-blue-100 text-blue-700'   },
+  'Banking & Finance':         { icon: CreditCard, color: 'bg-green-100 text-green-700' },
+  'Real Estate':               { icon: Home,       color: 'bg-purple-100 text-purple-700' },
+  'Construction':              { icon: Wrench,     color: 'bg-orange-100 text-orange-700' },
+  'Insurance':                 { icon: Shield,     color: 'bg-teal-100 text-teal-700'   },
+};
+
+const authHeader = () => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+});
+
 const AdminSettings = () => {
-  const [settings, setSettings] = useState({
-    // General Settings
-    siteName: 'Referus.co',
-    siteDescription: 'Professional referral management platform',
-    contactEmail: 'admin@referralhub.com',
-    supportEmail: 'support@referralhub.com',
-    
-    // Commission Settings
-    defaultCommissionRate: 5.0,
-    maxCommissionRate: 10.0,
-    minCommissionRate: 0.5,
-    
-    // Notification Settings
-    emailNotifications: true,
-    newLeadNotifications: true,
-    withdrawalNotifications: true,
-    weeklyReports: true,
-    
-    // Security Settings
-    requireEmailVerification: true,
-    allowSelfRegistration: true,
-    maxLoginAttempts: 5,
-    sessionTimeout: 24,
-    
-    // System Settings
-    maintenanceMode: false,
-    debugMode: false,
-    logLevel: 'info'
-  });
+  const [loading, setLoading]   = useState(true);
+  const [saving,  setSaving]    = useState(false);
 
-  const [loading, setLoading] = useState(false);
+  // form state
+  const [supportEmail,             setSupportEmail]             = useState('contact@referus.co');
+  const [supportResponseHours,     setSupportResponseHours]     = useState(24);
+  const [allowRegistration,        setAllowRegistration]        = useState(true);
+  const [minWithdrawalUSD,         setMinWithdrawalUSD]         = useState(10);
+  const [withdrawalProcessingDays, setWithdrawalProcessingDays] = useState('3-5');
+  const [commissionRates,          setCommissionRates]          = useState(DEFAULT_RATES);
 
-  const handleInputChange = (section, field, value) => {
-    setSettings(prev => ({
+  // ── Load from API ──────────────────────────────────────────────
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/settings`, { headers: authHeader() });
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        setSupportEmail(data.supportEmail ?? 'contact@referus.co');
+        setSupportResponseHours(data.supportResponseHours ?? 24);
+        setAllowRegistration(data.allowRegistration ?? true);
+        setMinWithdrawalUSD(data.minWithdrawalUSD ?? 10);
+        setWithdrawalProcessingDays(data.withdrawalProcessingDays ?? '3-5');
+        if (data.commissionRates && Object.keys(data.commissionRates).length) {
+          setCommissionRates({ ...DEFAULT_RATES, ...data.commissionRates });
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Could not load settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // ── Save to API ────────────────────────────────────────────────
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/settings`, {
+        method: 'PUT',
+        headers: authHeader(),
+        body: JSON.stringify({
+          supportEmail,
+          supportResponseHours: Number(supportResponseHours),
+          allowRegistration,
+          minWithdrawalUSD: Number(minWithdrawalUSD),
+          withdrawalProcessingDays,
+          commissionRates,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast.success('Settings saved');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetRates = () => {
+    if (window.confirm('Reset all commission rates to defaults?')) {
+      setCommissionRates({ ...DEFAULT_RATES });
+      toast.success('Commission rates reset');
+    }
+  };
+
+  const handleCommissionChange = (industry, bound, value) => {
+    setCommissionRates(prev => ({
       ...prev,
-      [field]: value
+      [industry]: { ...prev[industry], [bound]: parseFloat(value) || 0 }
     }));
   };
 
-  const handleSaveSettings = async () => {
-    setLoading(true);
-    try {
-      // Mock API call - in production, this would save to backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Settings saved successfully');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetToDefaults = () => {
-    if (window.confirm('Are you sure you want to reset all settings to default values?')) {
-      // Reset to default values
-      setSettings({
-        siteName: 'Referus.co',
-        siteDescription: 'Professional referral management platform',
-        contactEmail: 'admin@referralhub.com',
-        supportEmail: 'support@referralhub.com',
-        defaultCommissionRate: 5.0,
-        maxCommissionRate: 10.0,
-        minCommissionRate: 0.5,
-        emailNotifications: true,
-        newLeadNotifications: true,
-        withdrawalNotifications: true,
-        weeklyReports: true,
-        requireEmailVerification: true,
-        allowSelfRegistration: true,
-        maxLoginAttempts: 5,
-        sessionTimeout: 24,
-        maintenanceMode: false,
-        debugMode: false,
-        logLevel: 'info'
-      });
-      toast.success('Settings reset to defaults');
-    }
-  };
-
-  const SettingSection = ({ title, icon: Icon, children }) => (
+  // ── Layout helpers ─────────────────────────────────────────────
+  const Section = ({ icon: Icon, title, description, children }) => (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center">
-          <Icon className="h-5 w-5 text-gray-600 mr-2" />
+      <div className="px-6 py-4 border-b border-gray-200 flex items-start gap-3">
+        <Icon className="h-5 w-5 text-gray-500 mt-0.5 flex-shrink-0" />
+        <div>
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          {description && <p className="text-sm text-gray-500 mt-0.5">{description}</p>}
         </div>
       </div>
-      <div className="p-6">
-        {children}
-      </div>
+      <div className="p-6">{children}</div>
     </div>
   );
 
-  const SettingField = ({ label, type = 'text', value, onChange, options, helpText }) => (
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      {type === 'select' ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          {options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : type === 'checkbox' ? (
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            checked={value}
-            onChange={(e) => onChange(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label className="ml-2 text-sm text-gray-700">{label}</label>
-        </div>
-      ) : (
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-      )}
-      {helpText && (
-        <p className="mt-1 text-xs text-gray-500">{helpText}</p>
-      )}
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader className="h-6 w-6 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">System Settings</h2>
-          <p className="text-gray-600 mt-1">Configure platform settings and preferences</p>
+          <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+          <p className="text-gray-600 mt-1">Manage platform configuration</p>
         </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
+        <div className="mt-4 sm:mt-0 flex gap-3">
           <button
-            onClick={resetToDefaults}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-200"
+            onClick={handleResetRates}
+            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Reset to Defaults
+            Reset Rates
           </button>
           <button
-            onClick={handleSaveSettings}
-            disabled={loading}
-            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {loading ? (
-              <div className="spinner-small mr-2"></div>
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Save Settings
+            {saving
+              ? <Loader className="h-4 w-4 mr-2 animate-spin" />
+              : <Save className="h-4 w-4 mr-2" />
+            }
+            {saving ? 'Saving…' : 'Save Settings'}
           </button>
         </div>
       </div>
 
-      {/* General Settings */}
-      <SettingSection title="General Settings" icon={Globe}>
+      {/* ── 1. Platform Contact ────────────────────────────────── */}
+      <Section
+        icon={Globe}
+        title="Platform Contact"
+        description="Contact details shown in the footer, chatbot, and support pages"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SettingField
-            label="Site Name"
-            value={settings.siteName}
-            onChange={(value) => handleInputChange('general', 'siteName', value)}
-            helpText="The name displayed on the website"
-          />
-          <SettingField
-            label="Site Description"
-            value={settings.siteDescription}
-            onChange={(value) => handleInputChange('general', 'siteDescription', value)}
-            helpText="Brief description of the platform"
-          />
-          <SettingField
-            label="Contact Email"
-            type="email"
-            value={settings.contactEmail}
-            onChange={(value) => handleInputChange('general', 'contactEmail', value)}
-            helpText="Primary contact email for the platform"
-          />
-          <SettingField
-            label="Support Email"
-            type="email"
-            value={settings.supportEmail}
-            onChange={(value) => handleInputChange('general', 'supportEmail', value)}
-            helpText="Support email for user inquiries"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="email"
+                value={supportEmail}
+                onChange={e => setSupportEmail(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="contact@referus.co"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Displayed in footer, chatbot escalations, and FAQ</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Support Response Time (hours)</label>
+            <input
+              type="number"
+              min="1"
+              value={supportResponseHours}
+              onChange={e => setSupportResponseHours(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">Shown to users as expected reply time</p>
+          </div>
         </div>
-      </SettingSection>
+      </Section>
 
-      {/* Commission Settings */}
-      <SettingSection title="Commission Settings" icon={DollarSign}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <SettingField
-            label="Default Commission Rate (%)"
-            type="number"
-            value={settings.defaultCommissionRate}
-            onChange={(value) => handleInputChange('commission', 'defaultCommissionRate', parseFloat(value))}
-            helpText="Default commission rate for new leads"
-          />
-          <SettingField
-            label="Minimum Commission Rate (%)"
-            type="number"
-            value={settings.minCommissionRate}
-            onChange={(value) => handleInputChange('commission', 'minCommissionRate', parseFloat(value))}
-            helpText="Minimum allowed commission rate"
-          />
-          <SettingField
-            label="Maximum Commission Rate (%)"
-            type="number"
-            value={settings.maxCommissionRate}
-            onChange={(value) => handleInputChange('commission', 'maxCommissionRate', parseFloat(value))}
-            helpText="Maximum allowed commission rate"
-          />
+      {/* ── 2. Registration ───────────────────────────────────── */}
+      <Section
+        icon={UserPlus}
+        title="User Registration"
+        description="Control whether new users can create accounts"
+      >
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div>
+            <p className="text-sm font-medium text-gray-900">Allow new registrations</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When disabled, the sign-up form will show a message directing users to contact support
+            </p>
+          </div>
+          <button
+            onClick={() => setAllowRegistration(v => !v)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+              allowRegistration ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                allowRegistration ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
         </div>
-      </SettingSection>
+        <p className={`mt-3 text-sm font-medium ${allowRegistration ? 'text-green-600' : 'text-red-600'}`}>
+          {allowRegistration ? '✓ Registrations are open' : '✗ Registrations are currently disabled'}
+        </p>
+      </Section>
 
-      {/* Notification Settings */}
-      <SettingSection title="Notification Settings" icon={Bell}>
-        <div className="space-y-4">
-          <SettingField
-            label="Enable Email Notifications"
-            type="checkbox"
-            value={settings.emailNotifications}
-            onChange={(value) => handleInputChange('notifications', 'emailNotifications', value)}
-            helpText="Send email notifications for important events"
-          />
-          <SettingField
-            label="New Lead Notifications"
-            type="checkbox"
-            value={settings.newLeadNotifications}
-            onChange={(value) => handleInputChange('notifications', 'newLeadNotifications', value)}
-            helpText="Notify admin when new leads are submitted"
-          />
-          <SettingField
-            label="Withdrawal Notifications"
-            type="checkbox"
-            value={settings.withdrawalNotifications}
-            onChange={(value) => handleInputChange('notifications', 'withdrawalNotifications', value)}
-            helpText="Notify admin when withdrawal requests are made"
-          />
-          <SettingField
-            label="Weekly Reports"
-            type="checkbox"
-            value={settings.weeklyReports}
-            onChange={(value) => handleInputChange('notifications', 'weeklyReports', value)}
-            helpText="Send weekly summary reports to admin"
-          />
-        </div>
-      </SettingSection>
-
-      {/* Security Settings */}
-      <SettingSection title="Security Settings" icon={Shield}>
+      {/* ── 3. Withdrawal Settings ────────────────────────────── */}
+      <Section
+        icon={Wallet}
+        title="Withdrawal Settings"
+        description="Control minimum withdrawal amount and processing time shown to users"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SettingField
-            label="Require Email Verification"
-            type="checkbox"
-            value={settings.requireEmailVerification}
-            onChange={(value) => handleInputChange('security', 'requireEmailVerification', value)}
-            helpText="Require users to verify their email addresses"
-          />
-          <SettingField
-            label="Allow Self Registration"
-            type="checkbox"
-            value={settings.allowSelfRegistration}
-            onChange={(value) => handleInputChange('security', 'allowSelfRegistration', value)}
-            helpText="Allow users to register accounts themselves"
-          />
-          <SettingField
-            label="Maximum Login Attempts"
-            type="number"
-            value={settings.maxLoginAttempts}
-            onChange={(value) => handleInputChange('security', 'maxLoginAttempts', parseInt(value))}
-            helpText="Number of failed login attempts before account lockout"
-          />
-          <SettingField
-            label="Session Timeout (hours)"
-            type="number"
-            value={settings.sessionTimeout}
-            onChange={(value) => handleInputChange('security', 'sessionTimeout', parseInt(value))}
-            helpText="How long user sessions remain active"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Withdrawal (USD)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={minWithdrawalUSD}
+                onChange={e => setMinWithdrawalUSD(e.target.value)}
+                className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Users cannot withdraw below this amount</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Processing Time</label>
+            <input
+              type="text"
+              value={withdrawalProcessingDays}
+              onChange={e => setWithdrawalProcessingDays(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g. 3-5"
+            />
+            <p className="mt-1 text-xs text-gray-500">Business days shown to users (e.g. "3-5")</p>
+          </div>
         </div>
-      </SettingSection>
+      </Section>
 
-      {/* System Settings */}
-      <SettingSection title="System Settings" icon={Database}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SettingField
-            label="Maintenance Mode"
-            type="checkbox"
-            value={settings.maintenanceMode}
-            onChange={(value) => handleInputChange('system', 'maintenanceMode', value)}
-            helpText="Put the site in maintenance mode"
-          />
-          <SettingField
-            label="Debug Mode"
-            type="checkbox"
-            value={settings.debugMode}
-            onChange={(value) => handleInputChange('system', 'debugMode', value)}
-            helpText="Enable debug logging and error details"
-          />
-          <SettingField
-            label="Log Level"
-            type="select"
-            value={settings.logLevel}
-            onChange={(value) => handleInputChange('system', 'logLevel', value)}
-            options={[
-              { value: 'error', label: 'Error' },
-              { value: 'warn', label: 'Warning' },
-              { value: 'info', label: 'Info' },
-              { value: 'debug', label: 'Debug' }
-            ]}
-            helpText="Level of detail in system logs"
-          />
+      {/* ── 4. Commission Rates ───────────────────────────────── */}
+      <Section
+        icon={DollarSign}
+        title="Commission Rates"
+        description="Min and max percentage paid to referrers per industry when a deal closes"
+      >
+        {/* Table header */}
+        <div className="grid grid-cols-12 gap-4 px-4 pb-2">
+          <div className="col-span-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</div>
+          <div className="col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Min Rate</div>
+          <div className="col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Max Rate</div>
+          <div className="col-span-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Range</div>
         </div>
-      </SettingSection>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
+        <div className="space-y-2">
+          {Object.entries(commissionRates).map(([industry, rates]) => {
+            const meta = industryMeta[industry];
+            const Icon = meta?.icon || DollarSign;
+            return (
+              <div key={industry} className="grid grid-cols-12 gap-4 items-center bg-gray-50 rounded-lg px-4 py-3">
+                <div className="col-span-5 flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${meta?.color || 'bg-gray-100 text-gray-600'}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{industry}</span>
+                </div>
+                <div className="col-span-3">
+                  <div className="relative">
+                    <input
+                      type="number" min="0" max="100" step="0.5"
+                      value={rates.min}
+                      onChange={e => handleCommissionChange(industry, 'min', e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="col-span-3">
+                  <div className="relative">
+                    <input
+                      type="number" min="0" max="100" step="0.5"
+                      value={rates.max}
+                      onChange={e => handleCommissionChange(industry, 'max', e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="col-span-1">
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${meta?.color || 'bg-gray-100 text-gray-600'}`}>
+                    {rates.min}–{rates.max}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      {/* Bottom save */}
+      <div className="flex justify-end pb-4">
         <button
-          onClick={handleSaveSettings}
-          disabled={loading}
-          className="flex items-center px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          {loading ? (
-            <div className="spinner-small mr-2"></div>
-          ) : (
-            <Save className="h-5 w-5 mr-2" />
-          )}
-          Save All Settings
+          {saving
+            ? <Loader className="h-5 w-5 mr-2 animate-spin" />
+            : <Save className="h-5 w-5 mr-2" />
+          }
+          {saving ? 'Saving…' : 'Save All Settings'}
         </button>
       </div>
     </div>

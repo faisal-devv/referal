@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User, Shield, Crown } from 'lucide-react';
 
-const LoginForm = ({ onSwitchToRegister, onSuccess }) => {
+const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -69,9 +69,20 @@ const LoginForm = ({ onSwitchToRegister, onSuccess }) => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              {onForgotPassword && (
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-sm text-blue-700 hover:text-blue-600 font-medium"
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />

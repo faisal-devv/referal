@@ -115,7 +115,7 @@ const ContactForm = ({ isModal = false, onClose = null }) => {
   };
 
   const formContent = (
-    <div className={`${isModal ? 'p-6' : 'max-w-2xl mx-auto'}`}>
+    <div className="p-8">
       {isModal && (
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">
@@ -300,7 +300,7 @@ const ContactForm = ({ isModal = false, onClose = null }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl animate-slide-in-up">
+    <div className="bg-white rounded-2xl shadow-xl max-w-2xl mx-auto">
       {formContent}
     </div>
   );

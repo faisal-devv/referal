@@ -13,11 +13,16 @@ const connectDB = async () => {
   }
 
   if (!cached.promise) {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI environment variable is not set. Add it to your .env file.');
+    }
+
     const opts = {
       bufferCommands: false
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://abdullahriaz:hduh289h%40@yeahboimeow.5qio96x.mongodb.net/?retryWrites=true&w=majority&appName=yeahboimeow', opts).then((mongoose) => {
+    cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
       console.log(`MongoDB Connected: ${mongoose.connection.host}`);
       return mongoose;
     });

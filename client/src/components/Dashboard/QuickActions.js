@@ -35,7 +35,7 @@ const QuickActions = ({ user }) => {
     }
   ];
 
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.role === 'superadmin') {
     actions.push({
       icon: <Settings className="h-5 w-5" />,
       title: 'Admin Panel',

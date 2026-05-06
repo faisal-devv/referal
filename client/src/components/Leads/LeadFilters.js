@@ -26,7 +26,8 @@ const LeadFilters = ({
     { value: 'IT', label: 'IT Services' },
     { value: 'Banking', label: 'Banking & Finance' },
     { value: 'Real Estate', label: 'Real Estate' },
-    { value: 'Construction', label: 'Construction' }
+    { value: 'Construction', label: 'Construction' },
+    { value: 'Insurance', label: 'Insurance' }
   ];
 
   return (

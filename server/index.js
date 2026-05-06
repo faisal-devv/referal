@@ -4,7 +4,9 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
+const jwt = require('jsonwebtoken');
 const connectDB = require('./config/database');
+const ChatMessage = require('./models/ChatMessage');
 const dns = require('dns');
 
 // Load environment variables
@@ -27,17 +29,37 @@ const io = socketIo(server, {
   }
 });
 
+// CORS must come first so all responses (including errors) carry the right headers
+const allowedOrigins = [
+  'https://www.referus.co',
+  'https://referus.co'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    // Allow any localhost/127.0.0.1 origin in development
+    if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
+// Rate limiting — disable X-Forwarded-For validation for local/non-proxied environments
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  validate: { xForwardedForHeader: false }
 });
 app.use(limiter);
 
-// Ensure DB connection before handling requests to avoid race conditions
+// Ensure DB connection before handling requests
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -46,22 +68,6 @@ app.use(async (req, res, next) => {
     next(err);
   }
 });
-
-// CORS
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
-  'https://www.referus.co',
-  'https://referus.co'
-];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow non-browser or same-origin
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
@@ -75,40 +81,59 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/queries', require('./routes/queries'));
+app.use('/api/employee', require('./routes/employee'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Socket.io authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error('Authentication required'));
+  try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return next(new Error('Server misconfiguration'));
+    const decoded = jwt.verify(token, secret);
+    socket.userId = decoded.id;
+    next();
+  } catch {
+    next(new Error('Invalid token'));
+  }
+});
+
 // Socket.io for real-time chat
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
-  // Join user to their personal room
-  socket.on('join', (userId) => {
-    socket.join(`user_${userId}`);
-    console.log(`User ${userId} joined their room`);
-  });
+  // Auto-join authenticated user's own room — client cannot spoof the room
+  socket.join(`user_${socket.userId}`);
 
   // Handle sending messages
   socket.on('sendMessage', async (data) => {
     try {
-      const { receiverId, message, senderId } = data;
-      
-      // Emit to receiver
-      socket.to(`user_${receiverId}`).emit('newMessage', {
-        senderId,
-        message,
-        timestamp: new Date()
+      const { receiverId, message } = data;
+      const senderId = socket.userId; // always from verified token, not client payload
+
+      // Persist to database
+      const chatMessage = await ChatMessage.create({
+        sender: senderId,
+        receiver: receiverId,
+        message
       });
-      
-      // Emit back to sender for confirmation
-      socket.emit('messageSent', {
+
+      const payload = {
+        _id: chatMessage._id,
+        senderId,
         receiverId,
         message,
-        timestamp: new Date()
-      });
+        timestamp: chatMessage.createdAt
+      };
+
+      // Emit to receiver
+      socket.to(`user_${receiverId}`).emit('newMessage', payload);
+
+      // Emit back to sender for confirmation
+      socket.emit('messageSent', payload);
     } catch (error) {
       console.error('Socket message error:', error);
       socket.emit('error', { message: 'Failed to send message' });
@@ -118,14 +143,12 @@ io.on('connection', (socket) => {
   // Handle typing indicators
   socket.on('typing', (data) => {
     socket.to(`user_${data.receiverId}`).emit('userTyping', {
-      senderId: data.senderId,
+      senderId: socket.userId,
       isTyping: data.isTyping
     });
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
+  socket.on('disconnect', () => {});
 });
 
 // Error handling middleware

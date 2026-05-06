@@ -1,24 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  UserPlus, 
-  FileText, 
-  Eye, 
-  DollarSign, 
-  CheckCircle, 
+  UserPlus,
+  FileText,
+  Eye,
+  DollarSign,
+  CheckCircle,
   ArrowRight,
   Building2,
   CreditCard,
   Home,
-  Wrench
+  Wrench,
+  Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ContactForm from '../components/Forms/ContactForm';
 import AuthModal from '../components/Auth/AuthModal';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
+const DEFAULT_RATES = {
+  'IT / Software Development': { min: 5, max: 10 },
+  'Banking & Finance':         { min: 0.5, max: 2 },
+  'Real Estate':               { min: 1, max: 3 },
+  'Construction':              { min: 5, max: 10 },
+  'Insurance':                 { min: 2, max: 8 },
+};
+
 const HowItWorksPage = () => {
   const navigate = useNavigate();
   const [showContactForm, setShowContactForm] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [rates, setRates] = useState(DEFAULT_RATES);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/admin/settings/public`)
+      .then(r => r.json())
+      .then(d => { if (d.commissionRates && Object.keys(d.commissionRates).length) setRates(d.commissionRates); })
+      .catch(() => {});
+  }, []);
 
   const handleGetStartedClick = () => {
     // Open signup modal
@@ -55,7 +74,7 @@ const HowItWorksPage = () => {
     {
       number: "02",
       title: "Submit Qualified Leads",
-      description: "Submit leads in IT, Banking, Real Estate, or Construction with detailed information.",
+      description: "Submit leads in IT, Banking, Real Estate, Construction, or Insurance with detailed information.",
       icon: <FileText className="h-8 w-8" />,
       details: [
         "Provide company and contact information",
@@ -87,12 +106,17 @@ const HowItWorksPage = () => {
     }
   ];
 
+  const rateStr = (key) => {
+    const r = rates[key];
+    return r ? `${r.min}–${r.max}%` : '—';
+  };
+
   const industries = [
     {
       icon: <Building2 className="h-12 w-12" />,
       title: "IT Services",
       description: "Software development, cloud solutions, cybersecurity, and tech consulting",
-      commission: "5-10%",
+      commission: rateStr('IT / Software Development'),
       examples: [
         "Software development projects",
         "Cloud migration services",
@@ -104,7 +128,7 @@ const HowItWorksPage = () => {
       icon: <CreditCard className="h-12 w-12" />,
       title: "Banking & Finance",
       description: "Financial services, loans, investment products, and banking solutions",
-      commission: "0.5-2%",
+      commission: rateStr('Banking & Finance'),
       examples: [
         "Business loan referrals",
         "Investment product sales",
@@ -116,7 +140,7 @@ const HowItWorksPage = () => {
       icon: <Home className="h-12 w-12" />,
       title: "Real Estate",
       description: "Property sales, rentals, commercial real estate, and property management",
-      commission: "1-3%",
+      commission: rateStr('Real Estate'),
       examples: [
         "Commercial property sales",
         "Residential property transactions",
@@ -128,12 +152,24 @@ const HowItWorksPage = () => {
       icon: <Wrench className="h-12 w-12" />,
       title: "Construction",
       description: "Building projects, infrastructure, renovations, and construction services",
-      commission: "5-10%",
+      commission: rateStr('Construction'),
       examples: [
         "Construction project management",
         "Infrastructure development",
         "Building renovations",
         "Construction consulting"
+      ]
+    },
+    {
+      icon: <Shield className="h-12 w-12" />,
+      title: "Insurance",
+      description: "Life, health, auto, and commercial insurance policies across all coverage types",
+      commission: rateStr('Insurance'),
+      examples: [
+        "Life insurance policies",
+        "Health insurance plans",
+        "Commercial fleet coverage",
+        "Business liability insurance"
       ]
     }
   ];
@@ -222,9 +258,9 @@ const HowItWorksPage = () => {
               Submit leads across multiple high-value industries with competitive commission rates
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {industries.map((industry, index) => (
-              <div key={index} className="bg-white rounded-xl p-8 shadow-lg">
+              <div key={index} className="bg-white rounded-xl p-8 shadow-lg w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)]">
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center">
                     {industry.icon}
@@ -252,32 +288,6 @@ const HowItWorksPage = () => {
                     ))}
                   </ul>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-xl text-gray-600">
-              Everything you need to know about Referus.co
-            </p>
-          </div>
-          <div className="space-y-8">
-            {faqs.map((faq, index) => (
-              <div key={index} className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-600">
-                  {faq.answer}
-                </p>
               </div>
             ))}
           </div>

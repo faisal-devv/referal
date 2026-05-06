@@ -138,7 +138,7 @@ export const schemas = {
   },
 
   lead: {
-    category: [validationRules.required, validationRules.oneOf(['IT', 'Banking', 'Real Estate', 'Construction'])],
+    category: [validationRules.required, validationRules.oneOf(['IT', 'Banking', 'Real Estate', 'Construction', 'Insurance'])],
     companyName: [validationRules.required, validationRules.minLength(2)],
     contactPerson: [validationRules.required, validationRules.minLength(2)],
     email: [validationRules.required, validationRules.email],
