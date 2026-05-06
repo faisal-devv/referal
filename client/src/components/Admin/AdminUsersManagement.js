@@ -45,9 +45,13 @@ const AdminUsersManagement = () => {
         leadsAPI.getAllLeads().catch(() => ({ data: [] }))
       ]);
 
-      const leads = Array.isArray(leadsRes?.data) ? leadsRes.data : [];
+      const leadsBody = leadsRes?.data;
+      const leads = Array.isArray(leadsBody) ? leadsBody : (leadsBody?.data || []);
 
-      const mappedUsers = (usersRes?.data || []).map((u) => {
+      const usersBody = usersRes?.data;
+      const usersArray = Array.isArray(usersBody) ? usersBody : (usersBody?.data || []);
+
+      const mappedUsers = usersArray.map((u) => {
         const userLeads = leads.filter((l) => {
           const leadUserId = typeof l.user === 'object' && l.user !== null ? l.user._id : l.user;
           return leadUserId?.toString() === u._id?.toString();

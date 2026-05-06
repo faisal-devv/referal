@@ -57,7 +57,8 @@ const AdminLeadsManagement = () => {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error('Failed to fetch leads');
-      const data = await response.json();
+      const json = await response.json();
+      const data = Array.isArray(json) ? json : (json.data || []);
 
       const transformed = data
         .filter(lead => lead && lead._id)

@@ -72,8 +72,10 @@ const AdminPage = () => {
         axios.get(`${API_BASE_URL}/users`),
       ]);
 
-      const leads = leadsRes.status === 'fulfilled' ? leadsRes.value.data : [];
-      const users = usersRes.status === 'fulfilled' ? usersRes.value.data : [];
+      const leadsBody = leadsRes.status === 'fulfilled' ? leadsRes.value.data : {};
+      const usersBody = usersRes.status === 'fulfilled' ? usersRes.value.data : {};
+      const leads = Array.isArray(leadsBody) ? leadsBody : (leadsBody.data || []);
+      const users = Array.isArray(usersBody) ? usersBody : (usersBody.data || []);
 
       setStats({
         totalLeads: Array.isArray(leads) ? leads.length : 0,
