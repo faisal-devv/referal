@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import { usersAPI, leadsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import Pagination from '../Common/Pagination';
 
 const roleBadge = (role) => {
   if (role === 'superadmin') return 'bg-amber-100 text-amber-800';
@@ -31,11 +32,15 @@ const AdminUsersManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [savingRole, setSavingRole] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => { fetchUsers(); }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { filterUsers(); }, [users, searchTerm, statusFilter]);
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -154,6 +159,8 @@ const AdminUsersManagement = () => {
     });
   };
 
+  const pagedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -219,7 +226,7 @@ const AdminUsersManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {pagedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -304,6 +311,13 @@ const AdminUsersManagement = () => {
             </p>
           </div>
         )}
+        <Pagination
+          total={filteredUsers.length}
+          page={currentPage}
+          pageSize={pageSize}
+          onPage={setCurrentPage}
+          onPageSize={setPageSize}
+        />
       </div>
 
       {/* User Details Modal */}

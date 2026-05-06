@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Pagination from '../Common/Pagination';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -41,6 +42,8 @@ const AdminLeadsManagement = () => {
   const [editLead, setEditLead] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const INDUSTRIES = [
     'Construction', 'IT / Software Development', 'Banking & Finance',
@@ -49,6 +52,7 @@ const AdminLeadsManagement = () => {
 
   useEffect(() => { fetchLeads(); }, []);
   useEffect(() => { filterLeads(); }, [leads, searchTerm, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   const fetchLeads = async () => {
     try {
@@ -205,6 +209,8 @@ const AdminLeadsManagement = () => {
     }
   };
 
+  const pagedLeads = filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -269,7 +275,7 @@ const AdminLeadsManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLeads.map((lead) => (
+              {pagedLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">{lead.fullName}</div>
@@ -356,6 +362,13 @@ const AdminLeadsManagement = () => {
             </p>
           </div>
         )}
+        <Pagination
+          total={filteredLeads.length}
+          page={currentPage}
+          pageSize={pageSize}
+          onPage={setCurrentPage}
+          onPageSize={setPageSize}
+        />
       </div>
 
       {/* Edit Lead Modal */}
