@@ -22,7 +22,9 @@ const AdminEarningsManagement = () => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter(u =>
-      u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (u.userId || '').toLowerCase().includes(q)
     );
   }, [search, users]);
 
@@ -37,6 +39,7 @@ const AdminEarningsManagement = () => {
           id: u._id,
           name: u.name,
           email: u.email,
+          userId: u.userId || '',
           wallet: {
             usd: u.wallet?.usd || 0,
             aed: u.wallet?.aed || 0,
@@ -119,7 +122,7 @@ const AdminEarningsManagement = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or email…"
+              placeholder="Search by name, email or user ID…"
               className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
             {search && (
@@ -147,7 +150,10 @@ const AdminEarningsManagement = () => {
                   : 'border-transparent hover:border-gray-200 hover:bg-gray-50'
               }`}
             >
-              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                {user.userId && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{user.userId}</span>}
+              </div>
               <div className="text-xs text-gray-400">{user.email}</div>
               <div className="text-xs text-gray-500 mt-0.5">{format(walletTotal(user.wallet), currency)} total</div>
             </button>
