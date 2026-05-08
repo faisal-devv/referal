@@ -1,32 +1,25 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const ChatMessage = require('../models/ChatMessage');
+const BotMessage = require('../models/BotMessage');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const { protect } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const BOT_KNOWLEDGE = require('../data/botKnowledge');
 
 const router = express.Router();
 
 const buildSystemPrompt = (settings) => {
-  const rates = {};
-  if (settings?.commissionRates) {
-    settings.commissionRates.forEach((v, k) => { rates[k] = v; });
-  }
-  const rateLines = Object.entries(rates).map(([industry, r]) =>
-    `  - ${industry}: ${r.min}–${r.max}%`
-  ).join('\n') || '  - IT Services (5-10%), Construction (5-10%), Real Estate (1-3%), Banking & Finance (0.5-2%), Insurance (2-8%)';
-
   const minUSD = settings?.minWithdrawalUSD ?? 10;
   const processingDays = settings?.withdrawalProcessingDays ?? '3-5';
   const email = settings?.supportEmail ?? 'contact@referus.co';
   const responseHours = settings?.supportResponseHours ?? 24;
 
-  return `You are a friendly support assistant for Referus.co, a referral platform where users earn commissions by referring business leads.
+  return `You are a friendly support assistant for Referus.co.
 
-Key facts:
+Platform facts:
 - Free to join, no hidden fees. Users submit leads and earn when a deal closes.
-- Commission rates by industry:\n${rateLines}
 - Wallet currencies: USD, AED, EUR, SAR. Viewable in 150+ world currencies.
 - Minimum withdrawal: $${minUSD} USD. Processing: ${processingDays} business days.
 - Lead statuses: Pending → Contacted → Proposal Submitted → Deal Closed / Client Refused
@@ -35,7 +28,25 @@ Key facts:
 - Support response time: within ${responseHours} hours on business days.
 - Contact: ${email}
 
-Keep answers short and friendly. If a question needs account-specific information (e.g. specific withdrawal status, a specific lead dispute, billing issue), reply with only: FORWARD_TO_SUPPORT`;
+${BOT_KNOWLEDGE}
+
+Instructions:
+- Use the knowledge base above to answer questions directly and confidently.
+- Keep answers short, clear, and friendly.
+- If a question needs account-specific information (e.g. specific withdrawal status, a specific lead dispute, billing issue), reply with only: FORWARD_TO_SUPPORT`;
+};
+
+// Helper: extract user from JWT without hard-failing (optional auth)
+const tryGetUser = async (req) => {
+  try {
+    const jwt = require('jsonwebtoken');
+    const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
+    if (!token) return null;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.id || null;
+  } catch {
+    return null;
+  }
 };
 
 // @route   POST /api/chat/bot
@@ -46,10 +57,17 @@ router.post('/bot', [
   if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg });
 
   const { message, history = [] } = req.body;
+  const userId = await tryGetUser(req);
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+      if (userId) {
+        BotMessage.insertMany([
+          { user: userId, role: 'user', content: message },
+          { user: userId, role: 'assistant', content: "Our AI assistant is temporarily unavailable. Your query has been forwarded to our support team — they'll contact you within 24 hours.", forwarded: true },
+        ]).catch(() => {});
+      }
       return res.json({
         reply: "Our AI assistant is temporarily unavailable. Your query has been forwarded to our support team — they'll contact you within 24 hours.",
         forwarded: true,
@@ -75,20 +93,47 @@ router.post('/bot', [
     const result = await chat.sendMessage(message);
     const reply = result.response.text().trim();
 
+    let finalReply = reply;
+    let forwarded = false;
+
     if (reply.includes('FORWARD_TO_SUPPORT')) {
-      return res.json({
-        reply: "Your question needs a look at your specific account. I've forwarded it to our support team and they'll get back to you within 24 hours. Anything else I can help with?",
-        forwarded: true,
-      });
+      finalReply = "Your question needs a look at your specific account. I've forwarded it to our support team and they'll get back to you within 24 hours. Anything else I can help with?";
+      forwarded = true;
     }
 
-    res.json({ reply, forwarded: false });
+    if (userId) {
+      BotMessage.insertMany([
+        { user: userId, role: 'user', content: message },
+        { user: userId, role: 'assistant', content: finalReply, forwarded },
+      ]).catch(() => {});
+    }
+
+    res.json({ reply: finalReply, forwarded });
   } catch (err) {
     console.error('Bot error:', err.message);
-    res.json({
-      reply: "I'm having a little trouble right now. Your query has been forwarded to our support team — they'll contact you within 24 hours.",
-      forwarded: true,
-    });
+    const errReply = "I'm having a little trouble right now. Your query has been forwarded to our support team — they'll contact you within 24 hours.";
+    if (userId) {
+      BotMessage.insertMany([
+        { user: userId, role: 'user', content: message },
+        { user: userId, role: 'assistant', content: errReply, forwarded: true },
+      ]).catch(() => {});
+    }
+    res.json({ reply: errReply, forwarded: true });
+  }
+});
+
+// @route   GET /api/chat/bot/history
+// @desc    Get bot chat history for current user
+// @access  Private
+router.get('/bot/history', protect, async (req, res) => {
+  try {
+    const messages = await BotMessage.find({ user: req.user._id })
+      .sort({ createdAt: 1 })
+      .limit(200);
+    res.json(messages);
+  } catch (err) {
+    console.error('Bot history error:', err);
+    res.status(500).json({ message: 'Server error fetching bot history' });
   }
 });
 

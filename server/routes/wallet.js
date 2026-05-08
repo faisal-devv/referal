@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Withdrawal = require('../models/Withdrawal');
 const { protect, adminOnly, superAdminOnly } = require('../middleware/auth');
+const Notification = require('../models/Notification');
 
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
@@ -58,6 +59,18 @@ router.post('/withdraw', protect, [
     });
 
     await withdrawal.populate('user', 'name email');
+
+    // Notify all admins/superadmins about the withdrawal request
+    const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }, '_id');
+    const notifData = admins.map(a => ({
+      recipient: a._id,
+      type: 'withdrawal_requested',
+      title: 'Withdrawal Request',
+      message: `${withdrawal.user.name} requested a withdrawal of ${amount} ${currency}`,
+      link: '/admin?tab=earnings',
+    }));
+    if (notifData.length) Notification.insertMany(notifData).catch(() => {});
+
     res.status(201).json(withdrawal);
   } catch (error) {
     console.error('Withdrawal request error:', error);

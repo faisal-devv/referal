@@ -1,35 +1,200 @@
-import React, { useState, useRef } from 'react';
-import { User, Building2, Mail, Phone, FileText, CheckCircle, Info } from 'lucide-react';
-import ReactFlagsSelect from 'react-flags-select';
-import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode } from 'libphonenumber-js';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Building2, Mail, FileText, CheckCircle, Info, ChevronDown, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ALL_COUNTRY_CODES } from '../../utils/countryCodes';
 import Modal from '../Common/Modal';
 import { useAppTheme } from '../../context/AppThemeContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
+/* ─── Country codes ─────────────────────────────────────────────── */
+const COUNTRY_CODES = [
+  { code: '+1',   flag: '🇺🇸', name: 'United States' },
+  { code: '+1',   flag: '🇨🇦', name: 'Canada' },
+  { code: '+7',   flag: '🇷🇺', name: 'Russia' },
+  { code: '+20',  flag: '🇪🇬', name: 'Egypt' },
+  { code: '+27',  flag: '🇿🇦', name: 'South Africa' },
+  { code: '+30',  flag: '🇬🇷', name: 'Greece' },
+  { code: '+31',  flag: '🇳🇱', name: 'Netherlands' },
+  { code: '+32',  flag: '🇧🇪', name: 'Belgium' },
+  { code: '+33',  flag: '🇫🇷', name: 'France' },
+  { code: '+34',  flag: '🇪🇸', name: 'Spain' },
+  { code: '+36',  flag: '🇭🇺', name: 'Hungary' },
+  { code: '+39',  flag: '🇮🇹', name: 'Italy' },
+  { code: '+40',  flag: '🇷🇴', name: 'Romania' },
+  { code: '+41',  flag: '🇨🇭', name: 'Switzerland' },
+  { code: '+43',  flag: '🇦🇹', name: 'Austria' },
+  { code: '+44',  flag: '🇬🇧', name: 'United Kingdom' },
+  { code: '+45',  flag: '🇩🇰', name: 'Denmark' },
+  { code: '+46',  flag: '🇸🇪', name: 'Sweden' },
+  { code: '+47',  flag: '🇳🇴', name: 'Norway' },
+  { code: '+48',  flag: '🇵🇱', name: 'Poland' },
+  { code: '+49',  flag: '🇩🇪', name: 'Germany' },
+  { code: '+51',  flag: '🇵🇪', name: 'Peru' },
+  { code: '+52',  flag: '🇲🇽', name: 'Mexico' },
+  { code: '+54',  flag: '🇦🇷', name: 'Argentina' },
+  { code: '+55',  flag: '🇧🇷', name: 'Brazil' },
+  { code: '+56',  flag: '🇨🇱', name: 'Chile' },
+  { code: '+57',  flag: '🇨🇴', name: 'Colombia' },
+  { code: '+60',  flag: '🇲🇾', name: 'Malaysia' },
+  { code: '+61',  flag: '🇦🇺', name: 'Australia' },
+  { code: '+62',  flag: '🇮🇩', name: 'Indonesia' },
+  { code: '+63',  flag: '🇵🇭', name: 'Philippines' },
+  { code: '+64',  flag: '🇳🇿', name: 'New Zealand' },
+  { code: '+65',  flag: '🇸🇬', name: 'Singapore' },
+  { code: '+66',  flag: '🇹🇭', name: 'Thailand' },
+  { code: '+81',  flag: '🇯🇵', name: 'Japan' },
+  { code: '+82',  flag: '🇰🇷', name: 'South Korea' },
+  { code: '+84',  flag: '🇻🇳', name: 'Vietnam' },
+  { code: '+86',  flag: '🇨🇳', name: 'China' },
+  { code: '+90',  flag: '🇹🇷', name: 'Turkey' },
+  { code: '+91',  flag: '🇮🇳', name: 'India' },
+  { code: '+92',  flag: '🇵🇰', name: 'Pakistan' },
+  { code: '+93',  flag: '🇦🇫', name: 'Afghanistan' },
+  { code: '+94',  flag: '🇱🇰', name: 'Sri Lanka' },
+  { code: '+95',  flag: '🇲🇲', name: 'Myanmar' },
+  { code: '+98',  flag: '🇮🇷', name: 'Iran' },
+  { code: '+212', flag: '🇲🇦', name: 'Morocco' },
+  { code: '+213', flag: '🇩🇿', name: 'Algeria' },
+  { code: '+216', flag: '🇹🇳', name: 'Tunisia' },
+  { code: '+218', flag: '🇱🇾', name: 'Libya' },
+  { code: '+234', flag: '🇳🇬', name: 'Nigeria' },
+  { code: '+254', flag: '🇰🇪', name: 'Kenya' },
+  { code: '+255', flag: '🇹🇿', name: 'Tanzania' },
+  { code: '+256', flag: '🇺🇬', name: 'Uganda' },
+  { code: '+260', flag: '🇿🇲', name: 'Zambia' },
+  { code: '+263', flag: '🇿🇼', name: 'Zimbabwe' },
+  { code: '+351', flag: '🇵🇹', name: 'Portugal' },
+  { code: '+352', flag: '🇱🇺', name: 'Luxembourg' },
+  { code: '+353', flag: '🇮🇪', name: 'Ireland' },
+  { code: '+354', flag: '🇮🇸', name: 'Iceland' },
+  { code: '+358', flag: '🇫🇮', name: 'Finland' },
+  { code: '+370', flag: '🇱🇹', name: 'Lithuania' },
+  { code: '+371', flag: '🇱🇻', name: 'Latvia' },
+  { code: '+372', flag: '🇪🇪', name: 'Estonia' },
+  { code: '+380', flag: '🇺🇦', name: 'Ukraine' },
+  { code: '+381', flag: '🇷🇸', name: 'Serbia' },
+  { code: '+385', flag: '🇭🇷', name: 'Croatia' },
+  { code: '+386', flag: '🇸🇮', name: 'Slovenia' },
+  { code: '+387', flag: '🇧🇦', name: 'Bosnia & Herzegovina' },
+  { code: '+420', flag: '🇨🇿', name: 'Czech Republic' },
+  { code: '+421', flag: '🇸🇰', name: 'Slovakia' },
+  { code: '+880', flag: '🇧🇩', name: 'Bangladesh' },
+  { code: '+886', flag: '🇹🇼', name: 'Taiwan' },
+  { code: '+960', flag: '🇲🇻', name: 'Maldives' },
+  { code: '+961', flag: '🇱🇧', name: 'Lebanon' },
+  { code: '+962', flag: '🇯🇴', name: 'Jordan' },
+  { code: '+963', flag: '🇸🇾', name: 'Syria' },
+  { code: '+964', flag: '🇮🇶', name: 'Iraq' },
+  { code: '+965', flag: '🇰🇼', name: 'Kuwait' },
+  { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { code: '+967', flag: '🇾🇪', name: 'Yemen' },
+  { code: '+968', flag: '🇴🇲', name: 'Oman' },
+  { code: '+970', flag: '🇵🇸', name: 'Palestine' },
+  { code: '+971', flag: '🇦🇪', name: 'UAE' },
+  { code: '+972', flag: '🇮🇱', name: 'Israel' },
+  { code: '+973', flag: '🇧🇭', name: 'Bahrain' },
+  { code: '+974', flag: '🇶🇦', name: 'Qatar' },
+  { code: '+977', flag: '🇳🇵', name: 'Nepal' },
+  { code: '+992', flag: '🇹🇯', name: 'Tajikistan' },
+  { code: '+994', flag: '🇦🇿', name: 'Azerbaijan' },
+  { code: '+995', flag: '🇬🇪', name: 'Georgia' },
+  { code: '+998', flag: '🇺🇿', name: 'Uzbekistan' },
+];
+
+const UAE = COUNTRY_CODES.find(c => c.code === '+971');
+
+/* ─── CountryCodePicker ─────────────────────────────────────────── */
+const CountryCodePicker = ({ value, onChange, isDark, hasError }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = COUNTRY_CODES.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) || c.code.includes(search)
+  );
+
+  const errorBorder = hasError
+    ? (isDark ? 'border-red-500/60' : 'border-red-400')
+    : (isDark ? 'border-slate-700' : 'border-gray-300');
+
+  const btn = isDark
+    ? `flex items-center gap-1.5 px-3 py-3 h-full rounded-l-lg border border-r-0 ${errorBorder} bg-slate-800/60 text-white text-sm hover:bg-slate-700/60 transition-colors whitespace-nowrap`
+    : `flex items-center gap-1.5 px-3 py-3 h-full rounded-l-lg border border-r-0 ${errorBorder} bg-gray-50 text-gray-900 text-sm hover:bg-gray-100 transition-colors whitespace-nowrap`;
+
+  const dropdownBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200';
+  const itemHover  = isDark ? 'hover:bg-slate-700/60 text-slate-300 hover:text-white' : 'hover:bg-gray-50 text-gray-700';
+  const searchCls  = isDark
+    ? 'w-full px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500'
+    : 'w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-emerald-500';
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button type="button" onClick={() => { setOpen(o => !o); setSearch(''); }} className={btn}>
+        <span className="text-base">{value.flag}</span>
+        <span className="font-medium">{value.code}</span>
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
+      </button>
+
+      {open && (
+        <div className={`absolute left-0 top-full mt-1 w-64 rounded-xl border shadow-2xl z-50 overflow-hidden ${dropdownBg}`}>
+          <div className="p-2 border-b border-inherit">
+            <div className="relative">
+              <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search country..."
+                className={`${searchCls} pl-7`}
+              />
+            </div>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            {filtered.length === 0 && (
+              <p className={`px-4 py-3 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>No results</p>
+            )}
+            {filtered.map((c) => (
+              <button
+                key={`${c.code}-${c.name}`}
+                type="button"
+                onClick={() => { onChange(c); setOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${itemHover} ${value.code === c.code && value.name === c.name ? 'bg-emerald-500/10 text-emerald-400' : ''}`}
+              >
+                <span className="text-base flex-shrink-0">{c.flag}</span>
+                <span className="flex-1 text-left text-xs truncate">{c.name}</span>
+                <span className={`text-xs flex-shrink-0 ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>{c.code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── AddLeadForm ───────────────────────────────────────────────── */
 const AddLeadForm = () => {
   const { isDark } = useAppTheme();
+  const mobileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     fullName: '', companyName: '', designation: '',
-    email: '', mobile: '', country: 'US',
-    industry: '', otherIndustry: '',
+    email: '', industry: '', otherIndustry: '',
     referencePerson: '', useReference: '', details: '',
   });
+  const [countryCode, setCountryCode] = useState(UAE);
+  const [phoneNumber, setPhoneNumber] = useState(UAE.code + ' ');
 
-  const COUNTRY_CODES = ALL_COUNTRY_CODES;
-  const mobileInputRef = useRef(null);
-  const COUNTRY_LABELS = COUNTRY_CODES.reduce((acc, code) => {
-    acc[code] = code;
-    if (code === 'AE') acc[code] = 'UAE';
-    return acc;
-  }, {});
-
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]         = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted]   = useState(false);
 
   // ── Theme tokens ──────────────────────────────────────────────
   const headingCls  = isDark ? 'text-white'     : 'text-gray-900';
@@ -41,7 +206,7 @@ const AddLeadForm = () => {
 
   const baseInput = isDark
     ? 'w-full border rounded-lg focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:outline-none transition duration-200 bg-slate-800/60 text-white placeholder-slate-500'
-    : 'w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition duration-200 bg-white text-gray-900 placeholder-gray-400';
+    : 'w-full border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition duration-200 bg-white text-gray-900 placeholder-gray-400';
 
   const inputCls = (err) =>
     `${baseInput} px-4 py-3 ${err ? (isDark ? 'border-red-500/60' : 'border-red-400') : (isDark ? 'border-slate-700' : 'border-gray-300')}`;
@@ -52,10 +217,14 @@ const AddLeadForm = () => {
   const selectCls = (err) =>
     `${baseInput} px-4 py-3 ${err ? (isDark ? 'border-red-500/60' : 'border-red-400') : (isDark ? 'border-slate-700' : 'border-gray-300')}`;
 
+  const phoneInputCls = (err) => isDark
+    ? `w-full px-4 py-3 rounded-r-lg border ${err ? 'border-red-500/60' : 'border-slate-700'} bg-slate-800/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition duration-200 text-sm`
+    : `w-full px-4 py-3 rounded-r-lg border ${err ? 'border-red-400' : 'border-gray-300'} bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200 text-sm`;
+
   const radioCard = (selected) =>
     `flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
       selected
-        ? isDark ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-blue-500 bg-blue-50'
+        ? isDark ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-emerald-500 bg-emerald-50'
         : isDark ? 'border-slate-700 hover:bg-slate-800/60' : 'border-gray-300 hover:bg-gray-50'
     }`;
 
@@ -65,56 +234,36 @@ const AddLeadForm = () => {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleMobileChange = (e) => {
-    const { value } = e.target;
-    const calling = getCountryCallingCode(formData.country);
-    const digitsOnly = value.replace(/\D/g, '');
-    if (value.trim() === '' || digitsOnly === '' || digitsOnly === calling) {
-      setFormData(prev => ({ ...prev, mobile: '' }));
-      if (errors.mobile) setErrors(prev => ({ ...prev, mobile: '' }));
-      return;
+  const handleCountryChange = (c) => {
+    setCountryCode(c);
+    setPhoneNumber(c.code + ' ');
+    if (mobileInputRef.current) {
+      mobileInputRef.current.focus();
+      // Place cursor at end
+      setTimeout(() => {
+        const len = (c.code + ' ').length;
+        mobileInputRef.current.setSelectionRange(len, len);
+      }, 0);
     }
-    let nationalDigits = digitsOnly;
-    if (nationalDigits.startsWith(calling)) nationalDigits = nationalDigits.slice(calling.length);
-    const formatter = new AsYouType();
-    setFormData(prev => ({ ...prev, mobile: formatter.input(`+${calling}${nationalDigits}`) }));
-    if (errors.mobile) setErrors(prev => ({ ...prev, mobile: '' }));
+    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
   };
 
-  const handleMobileBlur = () => {
-    const trimmed = (formData.mobile || '').trim();
-    if (!trimmed) return;
-    const parsed = parsePhoneNumberFromString(trimmed, formData.country);
-    if (parsed) {
-      setFormData(prev => ({ ...prev, mobile: parsed.formatInternational() }));
-    } else if (!trimmed.startsWith('+')) {
-      const calling = getCountryCallingCode(formData.country);
-      setFormData(prev => ({ ...prev, mobile: `+${calling} ${trimmed.replace(/^0+/, '')}` }));
-    }
-  };
-
-  const handleCountrySelect = (code) => {
-    const calling = getCountryCallingCode(code);
-    setFormData(prev => ({ ...prev, country: code, mobile: `+${calling} ` }));
-    if (mobileInputRef.current) mobileInputRef.current.focus();
-    if (errors.mobile) setErrors(prev => ({ ...prev, mobile: '' }));
+  const handlePhoneChange = (e) => {
+    const cleaned = e.target.value.replace(/[^\d\s+\-().]/g, '');
+    setPhoneNumber(cleaned);
+    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.fullName.trim())      newErrors.fullName = 'Full name is required';
-    if (!formData.companyName.trim())   newErrors.companyName = 'Company name is required';
-    if (!formData.email.trim())         newErrors.email = 'Email is required';
+    if (!formData.fullName.trim())    newErrors.fullName    = 'Full name is required';
+    if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
+    if (!formData.email.trim())       newErrors.email       = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Please enter a valid email address';
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = 'Mobile number is required';
-    } else {
-      const parsed = parsePhoneNumberFromString(formData.mobile, formData.country);
-      if (!parsed || !parsed.isValid()) newErrors.mobile = 'Please enter a valid mobile number';
-    }
-    if (!formData.industry.trim()) newErrors.industry = 'Industry is required';
+    if (phoneNumber.trim() === countryCode.code || !phoneNumber.trim()) newErrors.phone = 'Mobile number is required';
+    if (!formData.industry.trim())    newErrors.industry    = 'Industry is required';
     if (formData.industry === 'Other' && !formData.otherIndustry.trim()) newErrors.otherIndustry = 'Please specify the industry';
-    if (!formData.useReference)         newErrors.useReference = 'Please select a reference option';
+    if (!formData.useReference)       newErrors.useReference = 'Please select a reference option';
     if (formData.useReference === 'use' && !formData.referencePerson.trim()) newErrors.referencePerson = "Please enter the reference person's name";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -124,16 +273,16 @@ const AddLeadForm = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
-    try {
-      const parsed = parsePhoneNumberFromString(formData.mobile, formData.country);
-      const e164Phone = parsed ? parsed.number : formData.mobile;
 
+    const fullPhone = phoneNumber.trim();
+
+    try {
       fetch('https://formspree.io/f/xkgqvjkw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: formData.fullName, companyName: formData.companyName,
-          designation: formData.designation, email: formData.email, mobile: e164Phone,
+          designation: formData.designation, email: formData.email, mobile: fullPhone,
           industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
           hasReference: formData.useReference === 'use',
           referencePerson: formData.referencePerson, useReference: formData.useReference,
@@ -149,7 +298,7 @@ const AddLeadForm = () => {
         body: JSON.stringify({
           category: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
           companyName: formData.companyName, contactPerson: formData.fullName,
-          email: formData.email, phone: e164Phone, description: formData.details,
+          email: formData.email, phone: fullPhone, description: formData.details,
           hasReference: formData.useReference === 'use',
           referencePerson: formData.useReference === 'use' ? formData.referencePerson : '',
           value: 0, currency: 'USD',
@@ -160,7 +309,9 @@ const AddLeadForm = () => {
 
       window.dispatchEvent(new CustomEvent('leadSubmitted'));
       setIsSubmitted(true);
-      setFormData({ fullName: '', companyName: '', designation: '', email: '', mobile: '', country: 'US', industry: '', otherIndustry: '', referencePerson: '', useReference: '', details: '' });
+      setFormData({ fullName: '', companyName: '', designation: '', email: '', industry: '', otherIndustry: '', referencePerson: '', useReference: '', details: '' });
+      setCountryCode(UAE);
+      setPhoneNumber(UAE.code + ' ');
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('There was an error submitting your lead. Please try again.');
@@ -264,29 +415,26 @@ const AddLeadForm = () => {
 
         {/* Mobile */}
         <div>
-          <label htmlFor="mobile" className={labelCls}>Client's Mobile Number *</label>
-          <div className="flex items-stretch gap-3">
-            <div className="w-28">
-              <ReactFlagsSelect
-                selected={formData.country}
-                onSelect={handleCountrySelect}
-                countries={COUNTRY_CODES}
-                customLabels={COUNTRY_LABELS}
-                selectedSize={14}
-                className="w-full"
-                placeholder="Country"
-                searchable
-                searchPlaceholder="Search country..."
-              />
-            </div>
-            <div className="relative flex-1">
-              <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${iconCls}`} />
-              <input type="tel" id="mobile" name="mobile" value={formData.mobile} ref={mobileInputRef}
-                onChange={handleMobileChange} onBlur={handleMobileBlur}
-                className={withIconCls(errors.mobile)} placeholder="Enter mobile number" />
-            </div>
+          <label className={labelCls}>
+            Client's Mobile Number *
+          </label>
+          <div className="flex">
+            <CountryCodePicker
+              value={countryCode}
+              onChange={handleCountryChange}
+              isDark={isDark}
+              hasError={!!errors.phone}
+            />
+            <input
+              ref={mobileInputRef}
+              type="text"
+              value={phoneNumber}
+              onChange={handlePhoneChange}
+              placeholder="e.g. 50 123 4567"
+              className={phoneInputCls(errors.phone)}
+            />
           </div>
-          <ErrorMsg msg={errors.mobile} />
+          <ErrorMsg msg={errors.phone} />
         </div>
 
         <SectionHeader num="2" label="Lead Details" />

@@ -233,7 +233,7 @@ const DashboardPage = () => {
                           {lead.status}
                         </span>
                       </div>
-                      <p className={`text-xs ${mutedCls}`}>{lead.category} · {lead.currency} {lead.value?.toLocaleString() || '0'}</p>
+                      <p className={`text-xs ${mutedCls}`}>{lead.category} · Submitted {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                     <button onClick={() => setViewLead(lead)}
                       className={`transition-colors ml-3 flex-shrink-0 ${isDark ? 'text-slate-600 hover:text-emerald-400' : 'text-gray-300 hover:text-emerald-500'}`}>
@@ -464,7 +464,6 @@ const DashboardPage = () => {
                 { label: 'Email',     value: viewLead.email },
                 { label: 'Phone',     value: viewLead.phone },
                 { label: 'Industry',  value: viewLead.category },
-                { label: 'Value',     value: `${viewLead.currency} ${viewLead.value?.toLocaleString() || '0'}` },
                 { label: 'Submitted', value: new Date(viewLead.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) },
               ].map(({ label, value }) => (
                 <div key={label} className={`rounded-lg p-3 ${infoRow}`}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Search, Phone, Mail } from 'lucide-react';
+import { Send, MessageCircle, Search, Phone, Mail, Bot } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -8,6 +8,8 @@ import { useAppTheme } from '../context/AppThemeContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
+const BOT_CONV_ID = '__bot__';
+
 const ChatPage = () => {
   const { user } = useAuth();
   const { isDark } = useAppTheme();
@@ -15,9 +17,12 @@ const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [botMessages, setBotMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [botLoading, setBotLoading] = useState(false);
+  const [sendingBot, setSendingBot] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
 
@@ -40,12 +45,17 @@ const ChatPage = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedConversation) fetchMessages(selectedConversation._id);
+    if (!selectedConversation) return;
+    if (selectedConversation._id === BOT_CONV_ID) {
+      fetchBotHistory();
+    } else {
+      fetchMessages(selectedConversation._id);
+    }
   }, [selectedConversation]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, botMessages, botLoading]);
 
   const initializeSocket = () => {
     const token = localStorage.getItem('token');
@@ -76,6 +86,18 @@ const ChatPage = () => {
     }
   };
 
+  const fetchBotHistory = async () => {
+    try {
+      setBotLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/chat/bot/history`);
+      setBotMessages(response.data);
+    } catch {
+      toast.error('Failed to load AI chat history');
+    } finally {
+      setBotLoading(false);
+    }
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation || !socketRef.current) return;
@@ -89,10 +111,45 @@ const ChatPage = () => {
     }
   };
 
+  const sendBotMessage = async (e) => {
+    e.preventDefault();
+    const text = newMessage.trim();
+    if (!text || sendingBot) return;
+    setNewMessage('');
+    setSendingBot(true);
+    // Optimistic user bubble
+    const optimistic = { _id: `opt-${Date.now()}`, role: 'user', content: text, createdAt: new Date().toISOString() };
+    setBotMessages(prev => [...prev, optimistic]);
+    try {
+      const history = botMessages.map(m => ({ role: m.role, content: m.content }));
+      const res = await axios.post(`${API_BASE_URL}/chat/bot`, { message: text, history });
+      const botReply = { _id: `bot-${Date.now()}`, role: 'assistant', content: res.data.reply, forwarded: res.data.forwarded, createdAt: new Date().toISOString() };
+      setBotMessages(prev => [...prev, botReply]);
+    } catch {
+      setBotMessages(prev => [...prev, { _id: `err-${Date.now()}`, role: 'assistant', content: "Sorry, I couldn't connect. Please try again.", createdAt: new Date().toISOString() }]);
+    } finally {
+      setSendingBot(false);
+    }
+  };
+
+  const isBotSelected = selectedConversation?._id === BOT_CONV_ID;
+
+  const botConv = {
+    _id: BOT_CONV_ID,
+    user: { _id: BOT_CONV_ID, name: 'AI Assistant', email: 'Referus Support Bot' },
+    lastMessage: botMessages.length > 0
+      ? { message: botMessages[botMessages.length - 1].content, createdAt: botMessages[botMessages.length - 1].createdAt }
+      : { message: 'Ask me anything about the platform…', createdAt: null },
+    unreadCount: 0,
+    isBot: true,
+  };
+
   const filteredConversations = conversations.filter(conv =>
     conv.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const allConversations = [botConv, ...filteredConversations];
 
   if (loading) {
     return (
@@ -127,52 +184,53 @@ const ChatPage = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length > 0 ? (
-              <div className={`divide-y ${divCls}`}>
-                {filteredConversations.map((conv) => {
-                  const active = selectedConversation?._id === conv._id;
-                  return (
-                    <div
-                      key={conv._id}
-                      onClick={() => setSelectedConversation(conv)}
-                      className={`p-4 cursor-pointer transition-colors ${
-                        active
-                          ? isDark ? 'bg-emerald-500/10 border-r-2 border-emerald-500' : 'bg-emerald-50 border-r-2 border-emerald-500'
-                          : rowHoverCls
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
-                          <span className={`text-sm font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                            {conv.user.name.charAt(0).toUpperCase()}
-                          </span>
+            <div className={`divide-y ${divCls}`}>
+              {allConversations.map((conv) => {
+                const active = selectedConversation?._id === conv._id;
+                return (
+                  <div
+                    key={conv._id}
+                    onClick={() => setSelectedConversation(conv)}
+                    className={`p-4 cursor-pointer transition-colors ${
+                      active
+                        ? isDark ? 'bg-emerald-500/10 border-r-2 border-emerald-500' : 'bg-emerald-50 border-r-2 border-emerald-500'
+                        : rowHoverCls
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        conv.isBot
+                          ? isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                          : isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                      }`}>
+                        {conv.isBot
+                          ? <Bot className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          : <span className={`text-sm font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                              {conv.user.name.charAt(0).toUpperCase()}
+                            </span>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className={`text-sm font-medium truncate ${headingCls}`}>{conv.user.name}</p>
+                          {conv.unreadCount > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white ml-1">
+                              {conv.unreadCount}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className={`text-sm font-medium truncate ${headingCls}`}>{conv.user.name}</p>
-                            {conv.unreadCount > 0 && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white ml-1">
-                                {conv.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-xs truncate mt-0.5 ${subCls}`}>{conv.lastMessage?.message}</p>
+                        <p className={`text-xs truncate mt-0.5 ${subCls}`}>{conv.lastMessage?.message}</p>
+                        {conv.lastMessage?.createdAt && (
                           <p className={`text-xs mt-0.5 ${mutedCls}`}>
-                            {conv.lastMessage?.createdAt && new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
-                        </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-8 text-center">
-                <MessageCircle className={`h-10 w-10 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-gray-400'}`} />
-                <p className={`text-sm font-medium mb-1 ${headingCls}`}>No conversations</p>
-                <p className={`text-xs ${subCls}`}>Start a conversation with support</p>
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -182,51 +240,115 @@ const ChatPage = () => {
             <>
               {/* Chat header */}
               <div className={`flex items-center gap-3 px-4 py-3 border-b ${borderCls}`} style={{ background: cardBg }}>
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
-                  <span className={`text-sm font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                    {selectedConversation.user.name.charAt(0).toUpperCase()}
-                  </span>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isBotSelected
+                    ? isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                    : isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                }`}>
+                  {isBotSelected
+                    ? <Bot className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                    : <span className={`text-sm font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                        {selectedConversation.user.name.charAt(0).toUpperCase()}
+                      </span>
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-semibold ${headingCls}`}>{selectedConversation.user.name}</p>
                   <p className={`text-xs ${subCls}`}>{selectedConversation.user.email}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
-                    <Phone className="h-4 w-4" />
-                  </button>
-                  <button className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
-                    <Mail className="h-4 w-4" />
-                  </button>
-                </div>
+                {!isBotSelected && (
+                  <div className="flex items-center gap-2">
+                    <button className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
+                      <Phone className="h-4 w-4" />
+                    </button>
+                    <button className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
+                      <Mail className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.length > 0 ? (
-                  messages.map((message) => {
-                    const isOther = message.sender._id === selectedConversation._id;
-                    return (
-                      <div key={message._id} className={`flex ${isOther ? 'justify-start' : 'justify-end'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
-                          isOther
-                            ? isDark ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-900'
-                            : 'bg-emerald-500 text-white'
+                {isBotSelected ? (
+                  botLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    </div>
+                  ) : botMessages.length > 0 ? (
+                    botMessages.map((msg) => (
+                      <div key={msg._id} className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'}`}>
+                          {msg.role === 'user'
+                            ? <span className="text-white text-xs font-bold">{(user?.name || 'U')[0].toUpperCase()}</span>
+                            : <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          }
+                        </div>
+                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                          msg.role === 'user'
+                            ? 'bg-blue-600 text-white rounded-br-sm'
+                            : isDark ? 'bg-slate-800 text-white border border-slate-700 rounded-bl-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
                         }`}>
-                          <p className="text-sm">{message.message}</p>
-                          <p className={`text-xs mt-1 ${isOther ? (isDark ? 'text-slate-500' : 'text-gray-400') : 'text-emerald-100'}`}>
-                            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {msg.content}
+                          {msg.forwarded && (
+                            <p className="text-xs mt-1 text-blue-400">📨 Forwarded to support team</p>
+                          )}
+                          <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
-                    );
-                  })
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Bot className={`h-10 w-10 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-gray-400'}`} />
+                        <p className={`text-sm font-medium mb-1 ${headingCls}`}>No previous conversations</p>
+                        <p className={`text-xs ${subCls}`}>Use the chat button at the bottom-right to talk to the AI assistant</p>
+                      </div>
+                    </div>
+                  )
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <MessageCircle className={`h-10 w-10 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-gray-400'}`} />
-                      <p className={`text-sm font-medium mb-1 ${headingCls}`}>No messages yet</p>
-                      <p className={`text-xs ${subCls}`}>Send a message to start the conversation</p>
+                  messages.length > 0 ? (
+                    messages.map((message) => {
+                      const isOther = message.sender._id === selectedConversation._id;
+                      return (
+                        <div key={message._id} className={`flex ${isOther ? 'justify-start' : 'justify-end'}`}>
+                          <div className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
+                            isOther
+                              ? isDark ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-900'
+                              : 'bg-emerald-500 text-white'
+                          }`}>
+                            <p className="text-sm">{message.message}</p>
+                            <p className={`text-xs mt-1 ${isOther ? (isDark ? 'text-slate-500' : 'text-gray-400') : 'text-emerald-100'}`}>
+                              {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <MessageCircle className={`h-10 w-10 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-gray-400'}`} />
+                        <p className={`text-sm font-medium mb-1 ${headingCls}`}>No messages yet</p>
+                        <p className={`text-xs ${subCls}`}>Send a message to start the conversation</p>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {sendingBot && (
+                  <div className="flex items-end gap-2">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'}`}>
+                      <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                    </div>
+                    <div className={`px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'}`}>
+                      <div className="flex gap-1 items-center">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -235,17 +357,17 @@ const ChatPage = () => {
 
               {/* Input */}
               <div className={`p-4 border-t ${borderCls}`} style={{ background: cardBg }}>
-                <form onSubmit={sendMessage} className="flex items-center gap-3">
+                <form onSubmit={isBotSelected ? sendBotMessage : sendMessage} className="flex items-center gap-3">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
+                    placeholder={isBotSelected ? 'Ask the AI assistant…' : 'Type your message...'}
                     className={`${inputCls} flex-1`}
                   />
                   <button
                     type="submit"
-                    disabled={!newMessage.trim()}
+                    disabled={!newMessage.trim() || (isBotSelected ? sendingBot : false)}
                     className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
                   >
                     <Send className="h-4 w-4" />
