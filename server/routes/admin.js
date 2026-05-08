@@ -4,6 +4,7 @@ const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
 const Query = require('../models/Query');
 const Settings = require('../models/Settings');
+const Notification = require('../models/Notification');
 
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
@@ -189,9 +190,23 @@ router.put('/leads/:id/status', protect, adminOnly, async (req, res) => {
       }
     }
 
-    await lead.save();
+    await lead.save({ validateBeforeSave: false });
     const updatedLead = await Lead.findById(req.params.id)
       .populate('user', 'name email');
+
+    // Notify the lead owner about the status change
+    if (updatedLead.user) {
+      const isDealClosed = status === 'Deal Closed';
+      Notification.create({
+        recipient: updatedLead.user._id,
+        type: isDealClosed ? 'deal_closed' : 'lead_status_updated',
+        title: isDealClosed ? '🎉 Deal Closed!' : 'Lead Status Updated',
+        message: isDealClosed
+          ? `Your lead for ${updatedLead.companyName} has been closed. Check your wallet for your reward!`
+          : `Your lead for ${updatedLead.companyName} is now: ${status}`,
+        link: '/leads',
+      }).catch(() => {});
+    }
 
     res.json(updatedLead);
   } catch (error) {

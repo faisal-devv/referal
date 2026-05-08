@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, Eye, Edit2, Building2,
   CheckCircle, Clock, XCircle, AlertCircle, X, Save,
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import LeadForm from '../components/Leads/LeadForm';
+
 import { useAppTheme } from '../context/AppThemeContext';
 import { friendlyError } from '../context/AuthContext';
 
@@ -56,6 +57,7 @@ const CAT_LIGHT = {
 
 const LeadsPage = () => {
   const { isDark } = useAppTheme();
+  const navigate = useNavigate();
 
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -63,7 +65,7 @@ const LeadsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [showLeadForm, setShowLeadForm] = useState(false);
+
   const [viewLead, setViewLead] = useState(null);
   const [editLead, setEditLead] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -211,7 +213,7 @@ const LeadsPage = () => {
           <p className={`text-sm mt-1 ${subCls}`}>Track and manage your referral leads</p>
         </div>
         <button
-          onClick={() => setShowLeadForm(true)}
+          onClick={() => navigate('/add-lead')}
           className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-emerald-500/20"
         >
           <Plus className="h-4 w-4" /> Submit Lead
@@ -326,7 +328,7 @@ const LeadsPage = () => {
             </p>
             {leads.length === 0 && (
               <button
-                onClick={() => setShowLeadForm(true)}
+                onClick={() => navigate('/add-lead')}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Plus className="h-4 w-4" /> Submit Your First Lead
@@ -335,11 +337,6 @@ const LeadsPage = () => {
           </div>
         )}
       </div>
-
-      {/* Submit Lead Modal */}
-      {showLeadForm && (
-        <LeadForm onClose={() => setShowLeadForm(false)} onSuccess={() => { setShowLeadForm(false); fetchLeads(); }} />
-      )}
 
       {/* View Lead Modal */}
       {viewLead && (

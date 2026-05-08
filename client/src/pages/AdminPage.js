@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Users, FileText, DollarSign, Settings, Menu, X,
-  BarChart3, MessageSquare, ChevronRight, Bell, LogOut,
+  BarChart3, MessageSquare, ChevronRight, LogOut,
   LayoutDashboard, Home,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,10 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import CurrencySelector from '../components/UI/CurrencySelector';
 import axios from 'axios';
 
-import AdminLeadsManagement   from '../components/Admin/AdminLeadsManagement';
-import AdminUsersManagement   from '../components/Admin/AdminUsersManagement';
+import AdminLeadsManagement    from '../components/Admin/AdminLeadsManagement';
+import AdminUsersManagement    from '../components/Admin/AdminUsersManagement';
 import AdminEarningsManagement from '../components/Admin/EarningsManagement';
-import AdminSettings          from '../components/Admin/AdminSettings';
+import AdminSettings           from '../components/Admin/AdminSettings';
+import NotificationBell        from '../components/Common/NotificationBell';
 import AdminSummary           from '../components/Admin/AdminSummary';
 import AdminQueriesManagement from '../components/Admin/AdminQueriesManagement';
 
@@ -227,10 +228,7 @@ const AdminPage = () => {
               Home
             </button>
 
-            <button className="relative p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell className="h-4.5 w-4.5 h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white" />
-            </button>
+            <NotificationBell theme="light" />
 
             <div className="w-px h-6 bg-gray-200 mx-1" />
 

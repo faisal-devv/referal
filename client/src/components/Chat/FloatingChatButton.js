@@ -14,15 +14,33 @@ const FloatingChatButton = () => {
   const [messages, setMessages] = useState([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Auto-scroll on new message
+  // Load bot chat history on first open
+  useEffect(() => {
+    if (!isOpen || historyLoaded) return;
+    const token = localStorage.getItem('token');
+    if (!token) { setHistoryLoaded(true); return; }
+
+    fetch(`${API_BASE_URL}/chat/bot/history`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setMessages([WELCOME, ...data.map(m => ({ role: m.role, content: m.content, forwarded: m.forwarded }))]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoaded(true));
+  }, [isOpen, historyLoaded]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Focus input when opened
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
@@ -37,13 +55,17 @@ const FloatingChatButton = () => {
     setInput('');
     setLoading(true);
 
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_BASE_URL}/chat/bot`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           message: text,
-          history: next.slice(1), // skip welcome message
+          history: next.slice(1),
         }),
       });
       const data = await res.json();
@@ -105,14 +127,12 @@ const FloatingChatButton = () => {
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50">
             {messages.map((msg, i) => (
               <div key={i} className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar */}
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}>
                   {msg.role === 'user'
                     ? <User className="h-3.5 w-3.5 text-white" />
                     : <Bot className="h-3.5 w-3.5 text-blue-600" />
                   }
                 </div>
-                {/* Bubble */}
                 <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-sm'
@@ -126,7 +146,6 @@ const FloatingChatButton = () => {
               </div>
             ))}
 
-            {/* Typing indicator */}
             {loading && (
               <div className="flex items-end gap-2">
                 <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center">
@@ -153,7 +172,7 @@ const FloatingChatButton = () => {
               onKeyDown={handleKey}
               placeholder="Type a message…"
               rows={1}
-              className="flex-1 resize-none px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-h-24"
+              className="flex-1 resize-none px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-h-24"
               style={{ minHeight: '38px' }}
             />
             <button

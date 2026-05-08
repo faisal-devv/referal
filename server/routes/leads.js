@@ -4,6 +4,7 @@ const Lead = require('../models/Lead');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const { protect, adminOnly } = require('../middleware/auth');
+const Notification = require('../models/Notification');
 
 // Maps lead currency to the User.wallet field name
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
@@ -56,7 +57,18 @@ router.post('/', protect, [
 
     const lead = await Lead.create(leadData);
     await lead.populate('user', 'name email userId');
-    
+
+    // Notify all admins/superadmins about the new lead
+    const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }, '_id');
+    const notifData = admins.map(a => ({
+      recipient: a._id,
+      type: 'lead_submitted',
+      title: 'New Lead Submitted',
+      message: `${lead.user.name} submitted a lead for ${lead.companyName} (${lead.category})`,
+      link: '/admin?tab=leads',
+    }));
+    if (notifData.length) Notification.insertMany(notifData).catch(() => {});
+
     res.status(201).json(lead);
   } catch (error) {
     console.error('Create lead error:', error);
@@ -165,7 +177,7 @@ router.put('/:id', protect, [
       if (req.body[field] !== undefined) lead[field] = req.body[field];
     });
 
-    await lead.save();
+    await lead.save({ validateBeforeSave: false });
     await lead.populate('user', 'name email userId');
     res.json(lead);
   } catch (error) {
@@ -222,7 +234,7 @@ router.put('/:id/status', protect, adminOnly, [
       }
     }
 
-    await lead.save();
+    await lead.save({ validateBeforeSave: false });
     await lead.populate('user', 'name email userId');
     await lead.populate('notes.addedBy', 'name');
 

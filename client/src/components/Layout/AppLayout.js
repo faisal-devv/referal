@@ -8,6 +8,7 @@ import {
   LogOut, Menu, X, ChevronDown, User, HelpCircle, Sun, Moon,
 } from 'lucide-react';
 import CurrencySelector from '../UI/CurrencySelector';
+import NotificationBell from '../Common/NotificationBell';
 
 const NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -170,6 +171,8 @@ const AppLayoutInner = ({ children, isDark, toggleTheme }) => {
             >
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
+
+            <NotificationBell theme={isDark ? 'dark' : 'light'} />
 
             <Link to="/wallet" className={`hidden sm:flex items-center gap-1.5 text-sm font-medium transition-colors ${walletLink}`}>
               <Wallet size={15} />

@@ -47,7 +47,7 @@ const faqs = [
     items: [
       {
         q: 'How much can I earn per referral?',
-        a: 'Commission rates vary by industry. IT & Software leads earn 5–10% of the project value. Construction leads earn 5–10% of the labor cost. Real Estate leads earn 1–3% of the transaction value. Banking & Finance leads earn 0.5–2% depending on the product. Insurance leads vary based on policy value. Contact us for exact rates on your specific lead.',
+        a: 'Earnings depend on the type of product or service and the sector of the referral. There is no fixed amount or percentage, as rewards may vary based on the referral category, partner structure, and successful deal closure.',
       },
       {
         q: 'When do I get paid?',
@@ -72,7 +72,7 @@ const faqs = [
       },
       {
         q: 'Can I edit or delete a lead after submitting it?',
-        a: 'You can view and manage your leads from the My Leads page. Contact our support team if you need to update critical details on an already-submitted lead.',
+        a: 'Yes. Users have the option to edit their submitted leads directly from the platform whenever required.',
       },
     ],
   },
@@ -121,7 +121,7 @@ const FAQItem = ({ q, a }) => {
 
 const FAQPage = () => {
   const [minWithdrawal, setMinWithdrawal] = useState(10);
-  const [processingDays, setProcessingDays] = useState('3-5');
+  const [processingDays, setProcessingDays] = useState('2-3');
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/admin/settings/public`)
@@ -184,7 +184,7 @@ const FAQPage = () => {
       </section>
 
       {/* CTA Bar */}
-      <section className="bg-slate-900 py-14">
+      <section className="py-14" style={{ background: '#0d1117' }}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-2xl font-bold text-white mb-2">Still have questions?</h3>
           <p className="text-slate-400 mb-7">Our team is happy to help you get started.</p>
