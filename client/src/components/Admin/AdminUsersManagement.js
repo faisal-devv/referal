@@ -69,6 +69,7 @@ const AdminUsersManagement = () => {
           name: u.name,
           email: u.email,
           role: u.role,
+          userId: u.userId || '—',
           isActive: u.isActive,
           createdAt: u.createdAt,
           lastLogin: u.createdAt,
@@ -100,6 +101,7 @@ const AdminUsersManagement = () => {
       filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(term) ||
         user.email.toLowerCase().includes(term) ||
+        (user.userId || '').toLowerCase().includes(term) ||
         user.id.toLowerCase().includes(term)
       );
     }
@@ -194,13 +196,13 @@ const AdminUsersManagement = () => {
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="appearance-none bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="all">All Users</option>
             <option value="active">Active Users</option>
@@ -217,6 +219,7 @@ const AdminUsersManagement = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role & Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
@@ -230,14 +233,19 @@ const AdminUsersManagement = () => {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                        <span className="text-sm font-bold text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
+                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <span className="text-sm font-bold text-indigo-700">{user.name.charAt(0).toUpperCase()}</span>
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">
+                      {user.userId}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col space-y-1">
@@ -276,7 +284,7 @@ const AdminUsersManagement = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => viewUserDetails(user)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         View
@@ -335,7 +343,7 @@ const AdminUsersManagement = () => {
             <div className="p-6 space-y-6">
               {/* Avatar + name */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl font-bold text-blue-700">{selectedUser.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div>
@@ -346,9 +354,13 @@ const AdminUsersManagement = () => {
 
               {/* Info grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">User ID</div>
+                  <div className="text-sm font-mono font-semibold text-indigo-700 tracking-wide">{selectedUser.userId}</div>
+                </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-xs font-medium text-gray-500 mb-1">User ID</div>
-                  <div className="text-sm font-mono text-gray-900 break-all">{selectedUser.id}</div>
+                  <div className="text-xs font-medium text-gray-500 mb-1">System ID</div>
+                  <div className="text-xs font-mono text-gray-400 break-all">{selectedUser.id}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-xs font-medium text-gray-500 mb-1">Joined</div>
@@ -383,7 +395,7 @@ const AdminUsersManagement = () => {
                         value={selectedUser.role}
                         onChange={(e) => changeUserRole(selectedUser.id, e.target.value)}
                         disabled={savingRole}
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
                       >
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
@@ -437,7 +449,7 @@ const AdminUsersManagement = () => {
                     <div className="text-xs text-gray-500">Successful</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-blue-600">
+                    <div className="text-lg font-bold text-indigo-600">
                       {selectedUser.totalLeads > 0 ? Math.round((selectedUser.successfulLeads / selectedUser.totalLeads) * 100) : 0}%
                     </div>
                     <div className="text-xs text-gray-500">Success Rate</div>

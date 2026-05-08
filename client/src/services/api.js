@@ -33,13 +33,11 @@ api.interceptors.request.use(
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+      // Let AuthContext handle cleanup + toast via the event listener
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
     }
     return Promise.reject(error);
   }

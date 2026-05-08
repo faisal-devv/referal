@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
   User,
@@ -7,10 +7,10 @@ import {
   Save,
   Search,
   ChevronDown,
+  ChevronRight,
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Pagination from '../Common/Pagination';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -42,8 +42,7 @@ const AdminLeadsManagement = () => {
   const [editLead, setEditLead] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [collapsedMonths, setCollapsedMonths] = useState(new Set());
 
   const INDUSTRIES = [
     'Construction', 'IT / Software Development', 'Banking & Finance',
@@ -52,7 +51,32 @@ const AdminLeadsManagement = () => {
 
   useEffect(() => { fetchLeads(); }, []);
   useEffect(() => { filterLeads(); }, [leads, searchTerm, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const groupedByMonth = useMemo(() => {
+    const groups = {};
+    filteredLeads.forEach(lead => {
+      const d = new Date(lead.submittedAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(lead);
+    });
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [filteredLeads]);
+
+  const toggleMonth = (key) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const formatMonthLabel = (key) => {
+    const [year, month] = key.split('-');
+    return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${year}`;
+  };
 
   const fetchLeads = async () => {
     try {
@@ -81,8 +105,9 @@ const AdminLeadsManagement = () => {
           submittedBy: lead.user ? {
             id: lead.user._id,
             name: lead.user.name || 'Unknown',
-            email: lead.user.email || ''
-          } : { id: '', name: 'Unknown User', email: '' },
+            email: lead.user.email || '',
+            userId: lead.user.userId || ''
+          } : { id: '', name: 'Unknown User', email: '', userId: '' },
           submittedAt: lead.createdAt,
           details: lead.description || ''
         }));
@@ -104,6 +129,7 @@ const AdminLeadsManagement = () => {
         (lead.fullName || '').toLowerCase().includes(term) ||
         (lead.companyName || '').toLowerCase().includes(term) ||
         (lead.submittedBy.name || '').toLowerCase().includes(term) ||
+        (lead.submittedBy.userId || '').toLowerCase().includes(term) ||
         (lead.industry || '').toLowerCase().includes(term)
       );
     }
@@ -209,7 +235,6 @@ const AdminLeadsManagement = () => {
     }
   };
 
-  const pagedLeads = filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (loading) {
     return (
@@ -242,14 +267,14 @@ const AdminLeadsManagement = () => {
               placeholder="Search leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           <div className="relative">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="appearance-none bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Statuses</option>
               {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
@@ -259,117 +284,145 @@ const AdminLeadsManagement = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Details</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted By</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {pagedLeads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{lead.fullName}</div>
-                    <div className="text-sm text-gray-500">{lead.companyName}</div>
-                    <div className="text-xs text-gray-400">{lead.email}</div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {lead.hasReference && lead.referencePerson && (
-                        <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                          <User className="h-3 w-3" />
-                          {lead.referencePerson}
-                        </span>
-                      )}
-                      {lead.details && (
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" title={lead.details}>
-                          <FileText className="h-3 w-3" />
-                          Notes
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-blue-700">
-                          {lead.submittedBy.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{lead.submittedBy.name}</div>
-                        <div className="text-xs text-gray-500">{lead.submittedBy.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.industry}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {lead.currency} {lead.value.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[lead.status]}`}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(lead.submittedAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => { setSelectedLead(lead); setShowLeadModal(true); }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        View
-                      </button>
-                      <button
-                        onClick={() => openEdit(lead)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Edit
-                      </button>
-                      <select
-                        value={lead.status}
-                        disabled={updatingId === lead.id}
-                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 cursor-pointer"
-                      >
-                        {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Month-grouped Tables */}
+      {filteredLeads.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
+          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
+          <p className="text-gray-500">
+            {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'No leads have been submitted yet'}
+          </p>
         </div>
+      ) : (
+        <div className="space-y-3">
+          {groupedByMonth.map(([key, monthLeads]) => {
+            const isCollapsed = collapsedMonths.has(key);
+            return (
+              <div key={key} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {/* Month header */}
+                <button
+                  onClick={() => toggleMonth(key)}
+                  className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    {isCollapsed
+                      ? <ChevronRight className="h-5 w-5 text-gray-400" />
+                      : <ChevronDown className="h-5 w-5 text-indigo-500" />
+                    }
+                    <span className="text-base font-semibold text-gray-900">{formatMonthLabel(key)}</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      {monthLeads.length} {monthLeads.length === 1 ? 'lead' : 'leads'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">{isCollapsed ? 'Click to expand' : 'Click to collapse'}</span>
+                </button>
 
-        {filteredLeads.length === 0 && (
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
-            <p className="text-gray-500">
-              {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'No leads have been submitted yet'}
-            </p>
-          </div>
-        )}
-        <Pagination
-          total={filteredLeads.length}
-          page={currentPage}
-          pageSize={pageSize}
-          onPage={setCurrentPage}
-          onPageSize={setPageSize}
-        />
-      </div>
+                {/* Leads table */}
+                {!isCollapsed && (
+                  <div className="border-t border-gray-100 overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Details</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted By</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {monthLeads.map((lead) => (
+                          <tr key={lead.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-gray-900">{lead.fullName}</div>
+                              <div className="text-sm text-gray-500">{lead.companyName}</div>
+                              <div className="text-xs text-gray-400">{lead.email}</div>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                {lead.hasReference && lead.referencePerson && (
+                                  <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                    <User className="h-3 w-3" />
+                                    {lead.referencePerson}
+                                  </span>
+                                )}
+                                {lead.details && (
+                                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" title={lead.details}>
+                                    <FileText className="h-3 w-3" />
+                                    Notes
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <span className="text-xs font-bold text-indigo-700">
+                                    {lead.submittedBy.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{lead.submittedBy.name}</div>
+                                  <div className="text-xs text-gray-500">{lead.submittedBy.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {lead.submittedBy.userId
+                                ? <span className="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100">{lead.submittedBy.userId}</span>
+                                : <span className="text-xs text-gray-300">—</span>
+                              }
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.industry}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {lead.currency} {lead.value.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[lead.status]}`}>
+                                {lead.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(lead.submittedAt)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => { setSelectedLead(lead); setShowLeadModal(true); }}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => openEdit(lead)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                  Edit
+                                </button>
+                                <select
+                                  value={lead.status}
+                                  disabled={updatingId === lead.id}
+                                  onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                                  className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 cursor-pointer"
+                                >
+                                  {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Edit Lead Modal */}
       {editLead && (
@@ -386,32 +439,32 @@ const AdminLeadsManagement = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                 <input type="text" name="companyName" value={editForm.companyName} onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
                 <input type="text" name="contactPerson" value={editForm.contactPerson} onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" name="email" value={editForm.email} onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input type="tel" name="phone" value={editForm.phone} onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
                 <select name="category" value={editForm.category} onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                   {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
@@ -420,12 +473,12 @@ const AdminLeadsManagement = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Value</label>
                   <input type="number" name="value" min="0" value={editForm.value} onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
                   <select name="currency" value={editForm.currency} onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                     {['USD','AED','EUR','SAR'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -434,28 +487,28 @@ const AdminLeadsManagement = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select name="status" value={editForm.status} onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                   {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="editHasRef" name="hasReference" checked={editForm.hasReference} onChange={handleEditChange}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
                 <label htmlFor="editHasRef" className="text-sm text-gray-700">Has a reference person</label>
               </div>
               {editForm.hasReference && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reference Person</label>
                   <input type="text" name="referencePerson" value={editForm.referencePerson} onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes / Description</label>
                 <textarea name="description" value={editForm.description} onChange={handleEditChange} rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none" />
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -464,7 +517,7 @@ const AdminLeadsManagement = () => {
                   Cancel
                 </button>
                 <button onClick={handleEditSave} disabled={saving}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium disabled:opacity-50">
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50">
                   {saving ? 'Saving…' : <><Save className="h-4 w-4" /> Save Changes</>}
                 </button>
               </div>
@@ -507,11 +560,11 @@ const AdminLeadsManagement = () => {
               <div>
                 <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Reference</div>
                 {selectedLead.hasReference ? (
-                  <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <User className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                    <User className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-xs text-blue-600 font-medium mb-0.5">Reference provided</div>
-                      <div className="text-sm font-semibold text-blue-900">
+                      <div className="text-xs text-indigo-600 font-medium mb-0.5">Reference provided</div>
+                      <div className="text-sm font-semibold text-indigo-900">
                         {selectedLead.referencePerson || '—'}
                       </div>
                     </div>
@@ -552,6 +605,9 @@ const AdminLeadsManagement = () => {
                   <div>
                     <div className="text-sm font-medium text-gray-900">{selectedLead.submittedBy.name}</div>
                     <div className="text-xs text-gray-500">{selectedLead.submittedBy.email}</div>
+                    {selectedLead.submittedBy.userId && (
+                      <div className="text-xs font-mono font-semibold text-indigo-600 mt-0.5">{selectedLead.submittedBy.userId}</div>
+                    )}
                     <div className="text-xs text-gray-400 font-mono">{selectedLead.submittedBy.id}</div>
                   </div>
                 </div>
@@ -572,7 +628,7 @@ const AdminLeadsManagement = () => {
                     value={selectedLead.status}
                     disabled={updatingId === selectedLead.id}
                     onChange={(e) => updateLeadStatus(selectedLead.id, e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
                   >
                     {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>

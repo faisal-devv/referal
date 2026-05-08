@@ -120,7 +120,7 @@ const AdminEarningsManagement = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name or email…"
-              className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
             {search && (
               <button
@@ -143,7 +143,7 @@ const AdminEarningsManagement = () => {
               onClick={() => handleUserSelect(user)}
               className={`w-full text-left px-3 py-2.5 rounded-lg border transition duration-150 ${
                 selectedUser?.id === user.id
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-indigo-500 bg-indigo-50'
                   : 'border-transparent hover:border-gray-200 hover:bg-gray-50'
               }`}
             >
@@ -202,7 +202,7 @@ const AdminEarningsManagement = () => {
                       const v = parseFloat(e.target.value);
                       setAmount(isNaN(v) ? '0.00' : v.toFixed(2));
                     }}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
                     placeholder="0.00"
                     step="0.01"
                     min="0"
@@ -226,7 +226,7 @@ const AdminEarningsManagement = () => {
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />

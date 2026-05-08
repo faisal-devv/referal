@@ -25,7 +25,7 @@ const Pagination = ({ total, page, pageSize, onPage, onPageSize, pageSizeOptions
           <select
             value={pageSize}
             onChange={(e) => { onPageSize(Number(e.target.value)); onPage(1); }}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
           >
             {pageSizeOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>

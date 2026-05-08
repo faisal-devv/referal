@@ -55,7 +55,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Enter your email"
               />
             </div>
@@ -70,7 +70,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
                 <button
                   type="button"
                   onClick={onForgotPassword}
-                  className="text-sm text-blue-700 hover:text-blue-600 font-medium"
+                  className="text-sm text-emerald-600 hover:text-emerald-500 font-medium"
                 >
                   Forgot password?
                 </button>
@@ -87,7 +87,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Enter your password"
               />
               <button
@@ -107,7 +107,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
           >
             {loading ? (
               <div className="flex items-center">
@@ -125,7 +125,7 @@ const LoginForm = ({ onSwitchToRegister, onForgotPassword, onSuccess }) => {
             Don't have an account?{' '}
             <button
               onClick={onSwitchToRegister}
-              className="font-medium text-blue-700 hover:text-blue-600 transition duration-200"
+              className="font-medium text-emerald-600 hover:text-emerald-500 transition duration-200"
             >
               Sign up here
             </button>

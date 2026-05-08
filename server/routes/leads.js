@@ -55,7 +55,7 @@ router.post('/', protect, [
     };
 
     const lead = await Lead.create(leadData);
-    await lead.populate('user', 'name email');
+    await lead.populate('user', 'name email userId');
     
     res.status(201).json(lead);
   } catch (error) {
@@ -70,7 +70,7 @@ router.post('/', protect, [
 router.get('/', protect, async (req, res) => {
   try {
     const leads = await Lead.find({ user: req.user._id })
-      .populate('user', 'name email')
+      .populate('user', 'name email userId')
       .sort({ createdAt: -1 });
     
     res.json(leads);
@@ -94,7 +94,7 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
 
     const [leads, total] = await Promise.all([
       Lead.find(filter)
-        .populate('user', 'name email')
+        .populate('user', 'name email userId')
         .populate('notes.addedBy', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -114,7 +114,7 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate('user', 'name email');
+    const lead = await Lead.findById(req.params.id).populate('user', 'name email userId');
 
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
@@ -166,7 +166,7 @@ router.put('/:id', protect, [
     });
 
     await lead.save();
-    await lead.populate('user', 'name email');
+    await lead.populate('user', 'name email userId');
     res.json(lead);
   } catch (error) {
     console.error('Update lead error:', error);
@@ -223,7 +223,7 @@ router.put('/:id/status', protect, adminOnly, [
     }
 
     await lead.save();
-    await lead.populate('user', 'name email');
+    await lead.populate('user', 'name email userId');
     await lead.populate('notes.addedBy', 'name');
 
     res.json(lead);

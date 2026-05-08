@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { friendlyError } from '../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -36,7 +37,7 @@ const ResetPasswordPage = () => {
       setDone(true);
       toast.success('Password reset! You can now sign in.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password. The link may have expired.');
+      setError(friendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ const ResetPasswordPage = () => {
             <p className="text-gray-600 mb-6">Your password has been reset successfully.</p>
             <button
               onClick={() => navigate('/')}
-              className="w-full py-3 px-4 bg-blue-700 text-white rounded-md font-medium hover:bg-blue-800 transition duration-200"
+              className="w-full py-3 px-4 bg-emerald-500 text-white rounded-md font-medium hover:bg-emerald-600 transition duration-200"
             >
               Go to Home & Sign In
             </button>
@@ -84,7 +85,7 @@ const ResetPasswordPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="Enter new password"
                   />
                   <button
@@ -111,7 +112,7 @@ const ResetPasswordPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="Confirm new password"
                   />
                   <button
@@ -129,7 +130,7 @@ const ResetPasswordPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
