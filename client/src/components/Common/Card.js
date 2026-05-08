@@ -1,29 +1,13 @@
 import React from 'react';
 
-const Card = ({ 
-  children, 
-  className = '', 
-  padding = 'medium',
-  shadow = 'medium',
-  ...props 
-}) => {
-  const paddingClasses = {
-    none: '',
-    small: 'p-4',
-    medium: 'p-6',
-    large: 'p-8'
-  };
-  
-  const shadowClasses = {
-    none: '',
-    small: 'shadow-sm',
-    medium: 'shadow-md',
-    large: 'shadow-lg'
-  };
+const Card = ({ children, className = '', padding = 'medium', shadow = 'medium', ...props }) => {
+  const pad = { none: '', small: 'p-4', medium: 'p-6', large: 'p-8' };
+  const shad = { none: '', small: 'shadow-sm', medium: 'shadow-md', large: 'shadow-xl' };
 
   return (
     <div
-      className={`bg-white rounded-lg border border-gray-200 ${paddingClasses[padding]} ${shadowClasses[shadow]} ${className}`}
+      className={`rounded-xl border border-slate-700/50 ${pad[padding]} ${shad[shadow]} ${className}`}
+      style={{ background: '#161b22' }}
       {...props}
     >
       {children}

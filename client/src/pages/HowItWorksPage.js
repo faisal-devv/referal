@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
   UserPlus,
   FileText,
   Eye,
@@ -12,44 +13,24 @@ import {
   Wrench,
   Shield
 } from 'lucide-react';
-import ContactForm from '../components/Forms/ContactForm';
+import { useAuth } from '../context/AuthContext';
 import AuthModal from '../components/Auth/AuthModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
-
-const DEFAULT_RATES = {
-  'IT / Software Development': { min: 5, max: 10 },
-  'Banking & Finance':         { min: 0.5, max: 2 },
-  'Real Estate':               { min: 1, max: 3 },
-  'Construction':              { min: 5, max: 10 },
-  'Insurance':                 { min: 2, max: 8 },
-};
-
 const HowItWorksPage = () => {
-  const [showContactForm, setShowContactForm] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [rates, setRates] = useState(DEFAULT_RATES);
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/admin/settings/public`)
-      .then(r => r.json())
-      .then(d => { if (d.commissionRates && Object.keys(d.commissionRates).length) setRates(d.commissionRates); })
-      .catch(() => {});
-  }, []);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleGetStartedClick = () => {
-    // Open signup modal
-    setIsAuthModalOpen(true);
+    if (isAuthenticated) navigate('/dashboard');
+    else setIsAuthModalOpen(true);
   };
 
   const handleContactUsClick = () => {
-    // Show contact form with smooth scroll
-    setShowContactForm(true);
-    // Smooth scroll to contact form after a brief delay
     setTimeout(() => {
       const contactFormElement = document.getElementById('contact-form-section');
       if (contactFormElement) {
-        contactFormElement.scrollIntoView({ 
+        contactFormElement.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         });
@@ -59,175 +40,167 @@ const HowItWorksPage = () => {
 
   const steps = [
     {
-      number: "01",
-      title: "Create Your Account",
-      description: "Sign up for free with your email and basic information. No credit card required.",
-      icon: <UserPlus className="h-8 w-8" />,
+      number: '01',
+      title: 'Create Your Account',
+      description: 'Sign up for free with your email and basic information. No credit card required.',
+      icon: <UserPlus className="h-6 w-6" />,
       details: [
-        "Complete your profile in under 2 minutes",
-        "Verify your email address",
-        "Set up your payment preferences"
+        'Complete your profile in under 2 minutes',
+        'Verify your email address',
+        'Set up your payment preferences'
       ]
     },
     {
-      number: "02",
-      title: "Submit Qualified Leads",
-      description: "Submit leads in IT, Banking, Real Estate, Construction, or Insurance with detailed information.",
-      icon: <FileText className="h-8 w-8" />,
+      number: '02',
+      title: 'Submit Qualified Leads',
+      description: 'Submit leads in IT, Banking, Real Estate, Construction, or Insurance with detailed information.',
+      icon: <FileText className="h-6 w-6" />,
       details: [
-        "Provide company and contact information",
-        "Describe the opportunity in detail",
-        "Set estimated deal value and timeline"
+        'Provide company and contact information',
+        'Describe the opportunity in detail',
+        'Set estimated deal value and timeline'
       ]
     },
     {
-      number: "03",
-      title: "Track Your Progress",
-      description: "Monitor lead status updates and communication in real-time.",
-      icon: <Eye className="h-8 w-8" />,
+      number: '03',
+      title: 'Track Your Progress',
+      description: 'Monitor lead status updates and communication in real-time.',
+      icon: <Eye className="h-6 w-6" />,
       details: [
-        "Real-time status updates",
-        "Direct communication with our team",
-        "Progress tracking dashboard"
+        'Real-time status updates',
+        'Direct communication with our team',
+        'Progress tracking dashboard'
       ]
     },
     {
-      number: "04",
-      title: "Get Paid",
-      description: "Receive commissions when your leads convert into successful deals.",
-      icon: <DollarSign className="h-8 w-8" />,
+      number: '04',
+      title: 'Get Paid',
+      description: 'Receive commissions when your leads convert into successful deals.',
+      icon: <DollarSign className="h-6 w-6" />,
       details: [
-        "Commission rates: 0.5-10% depending on industry",
-        "Multiple payment methods",
-        "Transparent fee structure"
+        'Commission rates: 0.5–10% depending on industry',
+        'Multiple payment methods',
+        'Transparent fee structure'
       ]
     }
   ];
 
-  const rateStr = (key) => {
-    const r = rates[key];
-    return r ? `${r.min}–${r.max}%` : '—';
-  };
-
   const industries = [
     {
-      icon: <Building2 className="h-12 w-12" />,
-      title: "IT Services",
-      description: "Software development, cloud solutions, cybersecurity, and tech consulting",
-      commission: rateStr('IT / Software Development'),
+      icon: <Building2 className="h-6 w-6" />,
+      iconColor: 'bg-blue-500/10 text-blue-600',
+      title: 'IT & ERP Services',
+      description: 'Software development, ERP implementation, cloud solutions, cybersecurity, digital transformation.',
       examples: [
-        "Software development projects",
-        "Cloud migration services",
-        "Cybersecurity implementations",
-        "IT consulting engagements"
+        'Software development projects',
+        'ERP implementation',
+        'Cloud migration and cybersecurity',
+        'Digital transformation consulting'
       ]
     },
     {
-      icon: <CreditCard className="h-12 w-12" />,
-      title: "Banking & Finance",
-      description: "Financial services, loans, investment products, and banking solutions",
-      commission: rateStr('Banking & Finance'),
+      icon: <CreditCard className="h-6 w-6" />,
+      iconColor: 'bg-emerald-500/10 text-emerald-600',
+      title: 'Banking & Finance',
+      description: 'Credit cards, personal loans, business financing, home mortgages, mutual funds, and more.',
       examples: [
-        "Business loan referrals",
-        "Investment product sales",
-        "Banking service implementations",
-        "Financial consulting projects"
+        'Personal and business loans',
+        'Home mortgages',
+        'Credit cards and mutual funds',
+        'Business financing solutions'
       ]
     },
     {
-      icon: <Home className="h-12 w-12" />,
-      title: "Real Estate",
-      description: "Property sales, rentals, commercial real estate, and property management",
-      commission: rateStr('Real Estate'),
+      icon: <Home className="h-6 w-6" />,
+      iconColor: 'bg-violet-500/10 text-violet-600',
+      title: 'Real Estate',
+      description: 'Property buying, selling, rentals, commercial spaces, investments, and mortgage solutions.',
       examples: [
-        "Commercial property sales",
-        "Residential property transactions",
-        "Property management services",
-        "Real estate development projects"
+        'Property buying and selling',
+        'Residential and commercial rentals',
+        'Real estate investments',
+        'Mortgage-related solutions'
       ]
     },
     {
-      icon: <Wrench className="h-12 w-12" />,
-      title: "Construction",
-      description: "Building projects, infrastructure, renovations, and construction services",
-      commission: rateStr('Construction'),
+      icon: <Wrench className="h-6 w-6" />,
+      iconColor: 'bg-orange-500/10 text-orange-600',
+      title: 'Construction & Interior Design',
+      description: 'Construction, renovation, architecture, fit-out, interior design, project management.',
       examples: [
-        "Construction project management",
-        "Infrastructure development",
-        "Building renovations",
-        "Construction consulting"
+        'Construction and renovations',
+        'Architecture and fit-out',
+        'Interior design projects',
+        'Project management services'
       ]
     },
     {
-      icon: <Shield className="h-12 w-12" />,
-      title: "Insurance",
-      description: "Life, health, auto, and commercial insurance policies across all coverage types",
-      commission: rateStr('Insurance'),
+      icon: <Shield className="h-6 w-6" />,
+      iconColor: 'bg-rose-500/10 text-rose-600',
+      title: 'Insurance',
+      description: 'Health, life, motor, travel, business insurance, and other protection solutions.',
       examples: [
-        "Life insurance policies",
-        "Health insurance plans",
-        "Commercial fleet coverage",
-        "Business liability insurance"
+        'Health and life insurance',
+        'Motor and travel insurance',
+        'Business insurance',
+        'Other protection solutions'
       ]
     }
   ];
 
   return (
     <div className="min-h-screen">
+
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              How It Works
-            </h1>
-            <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-              Turn your professional network into a revenue stream in four simple steps
-            </p>
+      <section className="relative py-24 overflow-hidden" style={{ background: '#080d18' }}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Channel Partner Program
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
+            How It Works
+          </h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Turn your professional network into a revenue stream in four simple steps. No experience required — just your connections.
+          </p>
         </div>
       </section>
 
       {/* Steps Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-16">
+      <section className="bg-slate-50 py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Four Simple Steps</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              From sign-up to your first commission payout — here's exactly how it works.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {steps.map((step, index) => (
-              <div key={index} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''}`}>
-                <div className={`${index % 2 === 1 ? 'lg:col-start-2' : ''}`}>
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold">
-                      {step.number}
-                    </div>
-                    <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center">
-                      {step.icon}
-                    </div>
-                  </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                    {step.title}
-                  </h2>
-                  <p className="text-xl text-gray-600 mb-6">
-                    {step.description}
-                  </p>
-                  <ul className="space-y-2">
-                    {step.details.map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-center space-x-3">
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div
+                key={index}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 relative overflow-hidden"
+              >
+                {/* Large background number */}
+                <span className="absolute top-4 right-6 text-5xl font-bold text-emerald-500/20 leading-none select-none">
+                  {step.number}
+                </span>
+                {/* Icon badge */}
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 text-white mb-5">
+                  {step.icon}
                 </div>
-                <div className={`${index % 2 === 1 ? 'lg:col-start-1' : ''}`}>
-                  <div className="bg-gray-50 rounded-xl p-8 h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-24 h-24 bg-primary-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                        {step.icon}
-                      </div>
-                      <p className="text-gray-500">Step {step.number} Visualization</p>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">{step.title}</h3>
+                <p className="text-slate-500 mb-5 leading-relaxed">{step.description}</p>
+                <ul className="space-y-2">
+                  {step.details.map((detail, di) => (
+                    <li key={di} className="flex items-start gap-3">
+                      <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-slate-500 text-sm">{detail}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
@@ -235,42 +208,38 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Industries Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Industries & Commission Rates
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Industries We Cover
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Submit leads across multiple high-value industries with competitive commission rates
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              Submit leads across multiple high-value industries and grow your earnings
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {industries.map((industry, index) => (
-              <div key={index} className="bg-white rounded-xl p-8 shadow-lg w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)]">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center">
+              <div
+                key={index}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`inline-flex items-center justify-center w-11 h-11 rounded-lg flex-shrink-0 ${industry.iconColor}`}>
                     {industry.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {industry.title}
-                    </h3>
-                    <p className="text-primary-600 font-medium">
-                      Commission: {industry.commission}
-                    </p>
+                    <h3 className="text-base font-semibold text-slate-900">{industry.title}</h3>
                   </div>
                 </div>
-                <p className="text-gray-600 mb-6">
-                  {industry.description}
-                </p>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Common Opportunities:</h4>
+                <p className="text-slate-500 text-sm mb-5 leading-relaxed">{industry.description}</p>
+                <div className="mt-auto">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Common Opportunities</h4>
                   <ul className="space-y-2">
-                    {industry.examples.map((example, exampleIndex) => (
-                      <li key={exampleIndex} className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
-                        <span className="text-gray-600">{example}</span>
+                    {industry.examples.map((example, ei) => (
+                      <li key={ei} className="flex items-center gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                        <span className="text-slate-500 text-sm">{example}</span>
                       </li>
                     ))}
                   </ul>
@@ -281,35 +250,36 @@ const HowItWorksPage = () => {
         </div>
       </section>
 
-      {/* Contact Form Section */}
-      {showContactForm && (
-        <section id="contact-form-section" className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ContactForm />
-          </div>
-        </section>
-      )}
-
       {/* CTA Section */}
-      <section className="py-20 bg-primary-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="bg-gradient-to-br from-emerald-600 to-emerald-700 py-20 overflow-hidden relative">
+        <div className="absolute -top-16 -right-16 w-64 h-64 bg-white/5 rounded-full pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-white/5 rounded-full pointer-events-none" />
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Get Started?
+            Ready to Start Earning?
           </h2>
-          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of professionals who are already earning with Referus.co
+          <p className="text-emerald-100 text-lg mb-10 max-w-xl mx-auto">
+            Join thousands of professionals already earning commissions by referring clients through Referus.co.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleGetStartedClick}
-              className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-lg hover:bg-gray-100 transition duration-200 shadow-lg"
-            >
-              Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-emerald-50 transition-all duration-200 shadow-xl hover:-translate-y-0.5"
+              >
+                Go to Dashboard <ArrowRight className="h-5 w-5" />
+              </Link>
+            ) : (
+              <button
+                onClick={handleGetStartedClick}
+                className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-emerald-50 transition-all duration-200 shadow-xl hover:-translate-y-0.5"
+              >
+                Get Started Free <ArrowRight className="h-5 w-5" />
+              </button>
+            )}
             <button
               onClick={handleContactUsClick}
-              className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-primary-600 transition duration-200"
+              className="inline-flex items-center justify-center gap-2 border-2 border-white/40 hover:border-white/80 text-white font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
             >
               Contact Sales
             </button>
@@ -318,8 +288,8 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Auth Modal */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         defaultToRegister={true}
       />

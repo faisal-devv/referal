@@ -25,7 +25,7 @@ const MessageInput = ({
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type your message..."
           disabled={disabled}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <Button
           type="submit"

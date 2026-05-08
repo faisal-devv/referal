@@ -44,8 +44,23 @@ const userSchema = new mongoose.Schema({
     uppercase: true,
     trim: true
   },
+  phone: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  profileImage: {
+    type: String,
+    default: ''
+  },
   lastLogin: {
     type: Date
+  },
+  userId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,

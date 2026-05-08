@@ -17,7 +17,7 @@ const faqs = [
       },
       {
         q: 'Who can join as a referrer?',
-        a: 'Anyone can join! Whether you\'re a freelancer, professional, business owner, or simply someone with a wide network, you can sign up and start submitting leads. No industry-specific background is required.',
+        a: "Anyone can join! Whether you're a freelancer, professional, business owner, or simply someone with a wide network, you can sign up and start submitting leads. No industry-specific background is required.",
       },
     ],
   },
@@ -26,7 +26,7 @@ const faqs = [
     items: [
       {
         q: 'What information do I need to submit a lead?',
-        a: 'You\'ll need the prospect\'s full name, company name, email address, mobile number, industry, and a brief description of their requirements. The more detail you provide, the higher the chance of a successful deal.',
+        a: "You'll need the prospect's full name, company name, email address, mobile number, industry, and a brief description of their requirements. The more detail you provide, the higher the chance of a successful deal.",
       },
       {
         q: 'Can I submit leads from any country?',
@@ -81,7 +81,7 @@ const faqs = [
     items: [
       {
         q: 'How do I reset my password?',
-        a: 'Click "Forgot password?" on the login screen and enter your email address. You\'ll receive a password reset link valid for 1 hour. If you don\'t receive the email, check your spam folder.',
+        a: "Click \"Forgot password?\" on the login screen and enter your email address. You'll receive a password reset link valid for 1 hour. If you don't receive the email, check your spam folder.",
       },
       {
         q: 'Is my personal data safe?',
@@ -98,19 +98,21 @@ const faqs = [
 const FAQItem = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left bg-white hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
       >
-        <span className="text-sm font-medium text-gray-900 pr-4">{q}</span>
+        <span className="text-sm font-medium text-slate-900 pr-4">{q}</span>
         <ChevronDown
-          className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 flex-shrink-0 transition-all duration-200 ${
+            open ? 'rotate-180 text-emerald-400' : 'text-slate-400'
+          }`}
         />
       </button>
       {open && (
-        <div className="px-5 pb-4 bg-white">
-          <p className="text-sm text-gray-600 leading-relaxed">{a}</p>
+        <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+          <p className="text-sm text-slate-500 leading-relaxed">{a}</p>
         </div>
       )}
     </div>
@@ -137,51 +139,64 @@ const FAQPage = () => {
       : a;
 
   return (
-  <div className="min-h-screen bg-gray-50">
-    {/* Hero */}
-    <div className="bg-white border-b border-gray-200">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-          <HelpCircle className="h-7 w-7 text-blue-700" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
-        <p className="text-lg text-gray-500">
-          Everything you need to know about Referus.co. Can't find what you're looking for?{' '}
-          <a href="/contact" className="text-blue-700 hover:underline">Contact us</a>.
-        </p>
-      </div>
-    </div>
+    <div className="min-h-screen">
 
-    {/* FAQ sections */}
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
-      {faqs.map(section => (
-        <div key={section.category}>
-          <h2 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-4">
-            {section.category}
-          </h2>
-          <div className="space-y-2">
-            {section.items.map(item => (
-              <FAQItem key={item.q} q={item.q} a={resolveAnswer(item.a)} />
-            ))}
+      {/* Hero Section */}
+      <section className="relative py-24 overflow-hidden" style={{ background: '#080d18' }}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Help Center
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
+            Frequently Asked Questions
+          </h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Everything you need to know about Referus.co. Can't find what you're looking for?{' '}
+            <a href="/contact" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors">
+              Contact us
+            </a>
+            .
+          </p>
         </div>
-      ))}
-    </div>
+      </section>
 
-    {/* CTA */}
-    <div className="bg-blue-700 mt-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <h3 className="text-2xl font-bold text-white mb-2">Still have questions?</h3>
-        <p className="text-blue-200 mb-6">Our team is happy to help you get started.</p>
-        <a
-          href="/contact"
-          className="inline-block bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-        >
-          Get in Touch
-        </a>
-      </div>
+      {/* FAQ Body */}
+      <section className="bg-slate-50 py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          {faqs.map(section => (
+            <div key={section.category}>
+              <div className="flex items-center gap-3 mb-5">
+                <HelpCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-emerald-600 text-xs font-bold uppercase tracking-widest">
+                  {section.category}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {section.items.map(item => (
+                  <FAQItem key={item.q} q={item.q} a={resolveAnswer(item.a)} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA Bar */}
+      <section className="bg-slate-900 py-14">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-2xl font-bold text-white mb-2">Still have questions?</h3>
+          <p className="text-slate-400 mb-7">Our team is happy to help you get started.</p>
+          <a
+            href="/contact"
+            className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-7 py-3 rounded-lg transition-colors duration-200"
+          >
+            Get in Touch
+          </a>
+        </div>
+      </section>
     </div>
-  </div>
   );
 };
 

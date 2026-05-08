@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';

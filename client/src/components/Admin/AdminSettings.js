@@ -147,7 +147,7 @@ const AdminSettings = () => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             {saving
               ? <Loader className="h-4 w-4 mr-2 animate-spin" />
@@ -173,7 +173,7 @@ const AdminSettings = () => {
                 type="email"
                 value={supportEmail}
                 onChange={e => setSupportEmail(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="contact@referus.co"
               />
             </div>
@@ -186,7 +186,7 @@ const AdminSettings = () => {
               min="1"
               value={supportResponseHours}
               onChange={e => setSupportResponseHours(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
             <p className="mt-1 text-xs text-gray-500">Shown to users as expected reply time</p>
           </div>
@@ -209,7 +209,7 @@ const AdminSettings = () => {
           <button
             onClick={() => setAllowRegistration(v => !v)}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-              allowRegistration ? 'bg-blue-600' : 'bg-gray-300'
+              allowRegistration ? 'bg-indigo-600' : 'bg-gray-300'
             }`}
           >
             <span
@@ -241,7 +241,7 @@ const AdminSettings = () => {
                 step="1"
                 value={minWithdrawalUSD}
                 onChange={e => setMinWithdrawalUSD(e.target.value)}
-                className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">Users cannot withdraw below this amount</p>
@@ -252,7 +252,7 @@ const AdminSettings = () => {
               type="text"
               value={withdrawalProcessingDays}
               onChange={e => setWithdrawalProcessingDays(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="e.g. 3-5"
             />
             <p className="mt-1 text-xs text-gray-500">Business days shown to users (e.g. "3-5")</p>
@@ -292,7 +292,7 @@ const AdminSettings = () => {
                       type="number" min="0" max="100" step="0.5"
                       value={rates.min}
                       onChange={e => handleCommissionChange(industry, 'min', e.target.value)}
-                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                     <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                   </div>
@@ -303,7 +303,7 @@ const AdminSettings = () => {
                       type="number" min="0" max="100" step="0.5"
                       value={rates.max}
                       onChange={e => handleCommissionChange(industry, 'max', e.target.value)}
-                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                     <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                   </div>
@@ -324,7 +324,7 @@ const AdminSettings = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex items-center px-6 py-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
         >
           {saving
             ? <Loader className="h-5 w-5 mr-2 animate-spin" />

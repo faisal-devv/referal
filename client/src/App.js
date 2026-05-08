@@ -8,6 +8,7 @@ import AdminProtectedRoute from './components/Layout/AdminProtectedRoute';
 import EmployeeProtectedRoute from './components/Layout/EmployeeProtectedRoute';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
+import AppLayout from './components/Layout/AppLayout';
 import FloatingChatButton from './components/Chat/FloatingChatButton';
 
 // Pages
@@ -22,86 +23,74 @@ import WalletPage from './pages/WalletPage';
 import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import EmployeePage from './pages/EmployeePage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import FAQPage from './pages/FAQPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
     <Router>
       <CurrencyProvider>
-      <AuthProvider>
-        <Routes>
-          {/* Standalone Routes - No Header/Footer */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-          <Route path="/admin" element={
-            <AdminProtectedRoute>
-              <AdminPage />
-            </AdminProtectedRoute>
-          } />
-          <Route path="/employee" element={
-            <EmployeeProtectedRoute>
-              <EmployeePage />
-            </EmployeeProtectedRoute>
-          } />
+        <AuthProvider>
+          <Routes>
+            {/* ── Standalone (no nav) ── */}
+<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/admin" element={
+              <AdminProtectedRoute><AdminPage /></AdminProtectedRoute>
+            } />
+            <Route path="/employee" element={
+              <EmployeeProtectedRoute><EmployeePage /></EmployeeProtectedRoute>
+            } />
 
-          {/* Public/User Routes - With Header/Footer */}
-          <Route path="/*" element={
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-grow">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/how-it-works" element={<HowItWorksPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/faq" element={<FAQPage />} />
-                  <Route path="/add-lead" element={<AddLeadPage />} />
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute><DashboardPage /></ProtectedRoute>
-                  } />
-                  <Route path="/leads" element={
-                    <ProtectedRoute><LeadsPage /></ProtectedRoute>
-                  } />
-                  <Route path="/wallet" element={
-                    <ProtectedRoute><WalletPage /></ProtectedRoute>
-                  } />
-                  <Route path="/chat" element={
-                    <ProtectedRoute><ChatPage /></ProtectedRoute>
-                  } />
-                </Routes>
-              </main>
-              <Footer />
-              <FloatingChatButton />
-            </div>
-          } />
-        </Routes>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#4ade80',
-                secondary: '#fff',
-              },
-            },
-            error: {
+            {/* ── Authenticated app pages — sidebar layout ── */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>
+            } />
+            <Route path="/leads" element={
+              <ProtectedRoute><AppLayout><LeadsPage /></AppLayout></ProtectedRoute>
+            } />
+            <Route path="/wallet" element={
+              <ProtectedRoute><AppLayout><WalletPage /></AppLayout></ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute><AppLayout><ChatPage /></AppLayout></ProtectedRoute>
+            } />
+            <Route path="/add-lead" element={
+              <ProtectedRoute><AppLayout><AddLeadPage /></AppLayout></ProtectedRoute>
+            } />
+
+            {/* ── Public pages — top nav + footer ── */}
+            <Route path="/*" element={
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-grow">
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/how-it-works" element={<HowItWorksPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/faq" element={<FAQPage />} />
+                  </Routes>
+                </main>
+                <Footer />
+                <FloatingChatButton />
+              </div>
+            } />
+          </Routes>
+
+          <Toaster
+            position="top-right"
+            toastOptions={{
               duration: 4000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
-            },
-          }}
-        />
-      </AuthProvider>
+              style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' },
+              success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+              error:   { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+            }}
+          />
+        </AuthProvider>
       </CurrencyProvider>
     </Router>
   );

@@ -226,7 +226,7 @@ const EmployeeLeadsView = () => {
                 placeholder="Search leads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
 
@@ -235,7 +235,7 @@ const EmployeeLeadsView = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="appearance-none bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="all">All Statuses</option>
                 {leadStatuses.map(status => (
@@ -432,7 +432,7 @@ const EmployeeLeadsView = () => {
                     <select
                       value={selectedLead.status}
                       onChange={(e) => updateLeadStatus(selectedLead.id, e.target.value)}
-                      className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="border border-gray-300 rounded-lg px-3 py-1 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       {leadStatuses.map(status => (
                         <option key={status} value={status}>{status}</option>

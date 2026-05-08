@@ -28,8 +28,8 @@ const AdminSummary = ({ stats }) => {
       title: 'Total Leads',
       value: stats.totalLeads,
       icon: FileText,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
       subtitle: `${stats.pendingLeads} pending review`,
     },
     {
@@ -69,22 +69,24 @@ const AdminSummary = ({ stats }) => {
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center justify-between">
+      <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #7C3AED 100%)' }}>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #fff 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+        <div className="absolute bottom-0 left-1/3 w-32 h-32 rounded-full opacity-5" style={{ background: '#fff', transform: 'translateY(50%)' }} />
+        <div className="relative flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold mb-1">Welcome back to Admin Dashboard</h2>
-            <p className="text-blue-100 text-sm">
+            <p className="text-indigo-100 text-sm">
               Monitor and manage your referral platform with comprehensive insights.
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-center">
-            <div className="bg-white bg-opacity-10 rounded-xl px-5 py-3">
+          <div className="hidden md:flex items-center gap-4 text-center">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
               <p className="text-2xl font-bold">{stats.totalLeads}</p>
-              <p className="text-xs text-blue-200 mt-0.5">Total Leads</p>
+              <p className="text-xs text-indigo-200 mt-0.5">Total Leads</p>
             </div>
-            <div className="bg-white bg-opacity-10 rounded-xl px-5 py-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
               <p className="text-2xl font-bold">{stats.totalUsers}</p>
-              <p className="text-xs text-blue-200 mt-0.5">Users</p>
+              <p className="text-xs text-indigo-200 mt-0.5">Users</p>
             </div>
           </div>
         </div>
@@ -129,7 +131,7 @@ const AdminSummary = ({ stats }) => {
           </div>
           <div className="p-6 grid grid-cols-1 gap-3">
             {[
-              { icon: FileText,   label: 'Review Pending Leads',   sub: `${stats.pendingLeads} leads need attention`, color: 'text-blue-600',   bg: 'bg-blue-50'   },
+              { icon: FileText,   label: 'Review Pending Leads',   sub: `${stats.pendingLeads} leads need attention`, color: 'text-indigo-600',   bg: 'bg-indigo-50'   },
               { icon: DollarSign, label: 'Manage Earnings',         sub: 'Update wallet balances',                    color: 'text-emerald-600', bg: 'bg-emerald-50' },
               { icon: Users,      label: 'Manage Users',            sub: `${stats.totalUsers} registered users`,      color: 'text-violet-600',  bg: 'bg-violet-50'  },
               { icon: AlertCircle,label: 'View Queries',            sub: 'Check contact form submissions',            color: 'text-amber-600',   bg: 'bg-amber-50'   },

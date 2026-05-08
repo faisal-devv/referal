@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Building2, CreditCard, Home, Wrench, Shield, Save, X } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { friendlyError } from '../../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -35,7 +36,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
       onClose?.();
     } catch (error) {
       console.error('Error submitting lead:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit lead');
+      toast.error(friendlyError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -101,7 +102,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                   required: 'Company name is required',
                   minLength: { value: 2, message: 'Company name must be at least 2 characters' }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Enter company name"
               />
               {errors.companyName && (
@@ -120,7 +121,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                   required: 'Contact person is required',
                   minLength: { value: 2, message: 'Contact person name must be at least 2 characters' }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Enter contact person name"
               />
               {errors.contactPerson && (
@@ -145,7 +146,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                     message: 'Please enter a valid email address'
                   }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="contact@company.com"
               />
               {errors.email && (
@@ -164,7 +165,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                   required: 'Phone number is required',
                   minLength: { value: 10, message: 'Phone number must be at least 10 digits' }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="+1 (555) 123-4567"
               />
               {errors.phone && (
@@ -186,7 +187,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                   required: 'Deal value is required',
                   min: { value: 1000, message: 'Minimum deal value is $1,000' }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="50000"
               />
               {errors.value && (
@@ -201,7 +202,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
               <select
                 id="currency"
                 {...register('currency', { required: 'Please select a currency' })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="">Select currency</option>
                 {currencies.map((currency) => (
@@ -229,7 +230,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
                 minLength: { value: 20, message: 'Description must be at least 20 characters' },
                 maxLength: { value: 500, message: 'Description cannot exceed 500 characters' }
               })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Describe the project, requirements, timeline, and any other relevant details..."
             />
             {errors.description && (

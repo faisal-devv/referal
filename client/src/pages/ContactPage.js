@@ -33,49 +33,56 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen">
+
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Contact Us
-            </h1>
-            <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-              Get in touch with our team. We're here to help you succeed with Referus.co.
-            </p>
+      <section className="relative py-24 overflow-hidden" style={{ background: '#080d18' }}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Get in Touch
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
+            Contact Us
+          </h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Have a question or need help? Our team is here for you. Reach out and we'll get back to you promptly.
+          </p>
         </div>
       </section>
 
-      {/* Contact Form & Info Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Main Section — Form + Info */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
+
+            {/* Left Column — Form */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Send us a Message
-              </h2>
-              <p className="text-gray-600 mb-8">
-                Have a question or need help? Fill out the form below and we'll get back to you as soon as possible.
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Send us a Message</h2>
+              <p className="text-slate-500 mb-8">
+                Fill out the form below and we'll get back to you as soon as possible.
               </p>
-              
+
               {isSubmitted ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">
+                <div
+                  className="bg-emerald-50 rounded-2xl border border-emerald-200 p-8 text-center"
+                >
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 mb-5">
+                    <CheckCircle className="h-7 w-7 text-emerald-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-2">
                     Message Sent Successfully!
                   </h3>
-                  <p className="text-green-600">
+                  <p className="text-slate-500 text-sm">
                     Thank you for contacting us. We'll get back to you within 24 hours.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
+                        Full Name <span className="text-emerald-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -84,13 +91,13 @@ const ContactPage = () => {
                         value={formData.name}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your full name"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                       />
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address *
+                        Email Address <span className="text-emerald-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -99,15 +106,15 @@ const ContactPage = () => {
                         value={formData.email}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your email"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                      Subject *
+                      Subject <span className="text-emerald-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -116,14 +123,14 @@ const ContactPage = () => {
                       value={formData.subject}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="What's this about?"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                      Message *
+                      Message <span className="text-emerald-500">*</span>
                     </label>
                     <textarea
                       id="message"
@@ -132,41 +139,57 @@ const ContactPage = () => {
                       onChange={handleChange}
                       required
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Tell us how we can help you..."
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
                     />
                   </div>
-                  
+
                   <button
                     type="submit"
-                    className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg hover:bg-primary-700 transition duration-200 flex items-center justify-center space-x-2"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                   >
-                    <Send className="h-5 w-5" />
-                    <span>Send Message</span>
+                    <Send className="h-4 w-4" />
+                    Send Message
                   </button>
                 </form>
               )}
             </div>
 
-            {/* Contact Information */}
-            <div>
-              {/* Business Hours */}
-              <div className="mt-12 bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Business Hours
-                </h3>
-                <div className="space-y-2 text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Monday - Friday</span>
-                    <span>9:00 AM - 6:00 PM EST</span>
+            {/* Right Column — Business hours + Response time */}
+            <div className="space-y-5">
+              {/* Business Hours Card */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                <h3 className="text-base font-semibold text-slate-900 mb-5">Business Hours</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-sm">Monday – Friday</span>
+                    <span className="text-slate-900 text-sm font-medium">9:00 AM – 6:00 PM EST</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Saturday</span>
-                    <span>10:00 AM - 4:00 PM EST</span>
+                  <div className="border-t border-slate-100" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-sm">Saturday</span>
+                    <span className="text-slate-900 text-sm font-medium">10:00 AM – 4:00 PM EST</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Sunday</span>
-                    <span>Closed</span>
+                  <div className="border-t border-slate-100" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-sm">Sunday</span>
+                    <span className="text-slate-500 text-sm font-medium">Closed</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Response Time Card */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                <div className="flex items-start gap-4">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900 mb-1">Response Time</h3>
+                    <p className="text-emerald-600 font-semibold text-sm mb-1">Within 24 hours</p>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      We aim to respond to all inquiries within one business day. For urgent matters, please mention it in your subject line.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -175,33 +198,23 @@ const ContactPage = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Common Questions
-            </h2>
-            <p className="text-xl text-gray-600">
-              Quick answers to frequently asked questions
-            </p>
+      {/* Quick Answers Section */}
+      <section className="bg-slate-50 py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">Common Questions</h2>
+            <p className="text-slate-500">Quick answers before you reach out</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                How quickly do you respond?
-              </h3>
-              <p className="text-gray-600">
-                We typically respond to all inquiries within 24 hours during business days.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <h3 className="text-base font-semibold text-slate-900 mb-3">How quickly do you respond?</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">
+                We typically respond to all inquiries within 24 hours during business days. For urgent matters, please mention it clearly in your subject line.
               </p>
             </div>
-            
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Is there a mobile app?
-              </h3>
-              <p className="text-gray-600">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <h3 className="text-base font-semibold text-slate-900 mb-3">Is there a mobile app?</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">
                 Currently, we offer a fully responsive web application that works perfectly on all mobile devices. A dedicated mobile app is in development and will be available soon.
               </p>
             </div>

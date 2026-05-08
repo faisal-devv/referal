@@ -1,38 +1,22 @@
 import React from 'react';
-import Card from '../Common/Card';
 
-const StatsCard = ({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
-  trendValue, 
-  className = '' 
-}) => {
-  return (
-    <Card className={`${className}`}>
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-            <Icon className="h-6 w-6 text-primary-600" />
-          </div>
-        </div>
-        <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <div className="flex items-center">
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            {trend && trendValue && (
-              <span className={`ml-2 text-sm font-medium ${
-                trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {trend === 'up' ? '+' : '-'}{trendValue}%
-              </span>
-            )}
-          </div>
-        </div>
+const StatsCard = ({ title, value, icon: Icon, iconColor = 'text-emerald-400', iconBg = 'bg-emerald-500/10', trend, trendValue, className = '' }) => (
+  <div className={`rounded-xl border border-slate-700/50 p-5 ${className}`} style={{ background: '#161b22' }}>
+    <div className="flex items-center justify-between mb-4">
+      <p className="text-sm font-medium text-slate-400">{title}</p>
+      <div className={`w-9 h-9 ${iconBg} rounded-lg flex items-center justify-center`}>
+        <Icon className={`h-4.5 w-4.5 ${iconColor}`} size={18} />
       </div>
-    </Card>
-  );
-};
+    </div>
+    <div className="flex items-end gap-2">
+      <p className="text-2xl font-bold text-white">{value}</p>
+      {trend && trendValue && (
+        <span className={`text-xs font-medium mb-0.5 ${trend === 'up' ? 'text-emerald-400' : 'text-red-400'}`}>
+          {trend === 'up' ? '+' : '-'}{trendValue}%
+        </span>
+      )}
+    </div>
+  </div>
+);
 
 export default StatsCard;
