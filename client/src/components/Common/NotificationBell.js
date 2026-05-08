@@ -49,7 +49,7 @@ const NotificationBell = ({ theme = 'light' }) => {
 
   useEffect(() => {
     fetchNotifications();
-    const id = setInterval(fetchNotifications, 30_000);
+    const id = setInterval(fetchNotifications, 10_000);
     return () => clearInterval(id);
   }, [fetchNotifications]);
 
@@ -114,7 +114,7 @@ const NotificationBell = ({ theme = 'light' }) => {
     <div className="relative" ref={ref}>
       {/* Bell button */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { setOpen(o => !o); fetchNotifications(); }}
         className={`relative p-2 rounded-lg transition-colors ${bellBtn}`}
         aria-label="Notifications"
       >

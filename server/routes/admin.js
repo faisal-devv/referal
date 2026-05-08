@@ -120,7 +120,7 @@ router.get('/leads', protect, adminOnly, async (req, res) => {
 
     const [leads, total] = await Promise.all([
       Lead.find(filter)
-        .populate('user', 'name email')
+        .populate('user', 'name email userId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
