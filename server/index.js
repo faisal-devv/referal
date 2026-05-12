@@ -82,6 +82,8 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/queries', require('./routes/queries'));
 app.use('/api/employee', require('./routes/employee'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/partners', require('./routes/partners'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

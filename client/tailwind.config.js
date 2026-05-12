@@ -52,6 +52,7 @@ module.exports = {
         'pulse-slow':     'pulse 4s ease-in-out infinite',
         'bounce-slight':  'bounceSlight 3s ease-in-out infinite',
         'shimmer':        'shimmer 2.5s ease-in-out infinite',
+        'marquee':        'marquee 45s linear infinite',
       },
       keyframes: {
         wordReveal: {
@@ -69,6 +70,10 @@ module.exports = {
         shimmer: {
           '0%':   { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition:  '200% center' },
+        },
+        marquee: {
+          '0%':   { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
     },

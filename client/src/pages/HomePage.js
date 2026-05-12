@@ -242,6 +242,22 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-white">
 
+      {/* ── TICKER BANNER ────────────────────────────────────────── */}
+      <div className="bg-emerald-500 overflow-hidden py-2.5">
+        <div className="flex w-max animate-marquee">
+          {[0, 1].map(group => (
+            <div key={group} className="flex shrink-0">
+              {[...Array(8)].map((_, i) => (
+                <span key={i} className="inline-flex items-center gap-2 text-white text-sm font-semibold px-10">
+                  <Globe className="h-4 w-4 flex-shrink-0" />
+                  The first global lead referral platform
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── 1. HERO ──────────────────────────────────────────────── */}
       <section className="relative pt-20 pb-28 overflow-hidden">
 
@@ -274,10 +290,8 @@ const HomePage = () => {
           {/* Animated headline, word by word */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight max-w-4xl mx-auto mb-6">
             {[
-              { text: 'You Refer a Client.',           cls: 'text-white' },
-              { text: 'Our Channel Partners',      cls: 'text-emerald-400' },
-              { text: 'Close the Deal.',           cls: 'text-white' },
-              { text: 'You Get Paid.',             cls: 'text-emerald-400' },
+              { text: 'Every Business Starts With a Connection.', cls: 'text-white' },
+              { text: 'We Just Made It Pay.',      cls: 'text-emerald-400' },
             ].map((part, i) => (
               <span
                 key={i}
@@ -310,7 +324,7 @@ const HomePage = () => {
                     {i + 1}
                   </div>
                   <span className="text-slate-200 text-sm font-medium whitespace-nowrap">
-                    {['Submit a Lead', 'We Close the Deal', 'You Get Paid'][i]}
+                    {['Submit a Lead', 'Channel Partners Close the Deal', 'You Get Paid'][i]}
                   </span>
                 </div>
                 {i < HOW_IT_WORKS.length - 1 && (

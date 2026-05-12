@@ -67,6 +67,12 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
+              <Link
+                to="/become-a-partner"
+                className="text-emerald-400 hover:text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-sm font-semibold px-3.5 py-1.5 rounded-lg transition-colors duration-150"
+              >
+                Become a Partner
+              </Link>
             </nav>
 
             {/* Desktop Auth */}
@@ -174,6 +180,10 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
+            <Link to="/become-a-partner" onClick={() => setIsMenuOpen(false)}
+              className="block px-3 py-2.5 text-emerald-400 hover:text-emerald-300 text-sm font-semibold rounded-lg border border-emerald-500/40 hover:border-emerald-400 transition-colors">
+              Become a Partner
+            </Link>
 
             <div className="border-t border-slate-800 pt-3 mt-2">
               {isAuthenticated ? (
