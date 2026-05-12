@@ -26,6 +26,7 @@ import EmployeePage from './pages/EmployeePage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import FAQPage from './pages/FAQPage';
 import ProfilePage from './pages/ProfilePage';
+import BecomePartnerPage from './pages/BecomePartnerPage';
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
                     <Route path="/how-it-works" element={<HowItWorksPage />} />
                     <Route path="/contact" element={<ContactPage />} />
                     <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/become-a-partner" element={<BecomePartnerPage />} />
                   </Routes>
                 </main>
                 <Footer />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Users, FileText, DollarSign, Settings, Menu, X,
   BarChart3, MessageSquare, ChevronRight, LogOut,
-  LayoutDashboard, Home,
+  LayoutDashboard, Home, Users2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import AdminSettings           from '../components/Admin/AdminSettings';
 import NotificationBell        from '../components/Common/NotificationBell';
 import AdminSummary           from '../components/Admin/AdminSummary';
 import AdminQueriesManagement from '../components/Admin/AdminQueriesManagement';
+import PartnerApplicationsManagement from '../components/Admin/PartnerApplicationsManagement';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -24,8 +25,9 @@ const NAV = [
   { id: 'leads',    label: 'Leads',               icon: FileText,      },
   { id: 'users',    label: 'Users',               icon: Users,         },
   { id: 'earnings', label: 'Earnings',            icon: DollarSign,    },
-  { id: 'queries',  label: 'Queries',             icon: MessageSquare, },
-  { id: 'settings', label: 'Settings',            icon: Settings,      },
+  { id: 'queries',   label: 'Queries',             icon: MessageSquare, },
+  { id: 'partners',  label: 'Partner Applications', icon: Users2,   },
+  { id: 'settings',  label: 'Settings',            icon: Settings,      },
 ];
 
 /* ── Sidebar ──────────────────────────────────────────────────────── */
@@ -169,8 +171,9 @@ const AdminPage = () => {
       case 'leads':    return <AdminLeadsManagement />;
       case 'users':    return <AdminUsersManagement />;
       case 'earnings': return <AdminEarningsManagement />;
-      case 'queries':  return <AdminQueriesManagement />;
-      case 'settings': return <AdminSettings />;
+      case 'queries':   return <AdminQueriesManagement />;
+      case 'partners':  return <PartnerApplicationsManagement />;
+      case 'settings':  return <AdminSettings />;
       default:         return <AdminSummary stats={stats} onNavigate={setActiveSection} />;
     }
   };

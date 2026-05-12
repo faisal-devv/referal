@@ -159,21 +159,14 @@ const ContactPage = () => {
             <div className="space-y-5">
               {/* Business Hours Card */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                <h3 className="text-base font-semibold text-slate-900 mb-5">Business Hours</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-sm">Monday – Friday</span>
-                    <span className="text-slate-900 text-sm font-medium">9:00 AM – 6:00 PM EST</span>
+                <h3 className="text-base font-semibold text-slate-900 mb-4">Business Hours</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg">🕐</span>
                   </div>
-                  <div className="border-t border-slate-100" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-sm">Saturday</span>
-                    <span className="text-slate-900 text-sm font-medium">10:00 AM – 4:00 PM EST</span>
-                  </div>
-                  <div className="border-t border-slate-100" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-sm">Sunday</span>
-                    <span className="text-slate-500 text-sm font-medium">Closed</span>
+                  <div>
+                    <p className="text-slate-900 text-sm font-semibold">24 / 7 — Always Open</p>
+                    <p className="text-slate-500 text-xs mt-0.5">We're available every day, all day</p>
                   </div>
                 </div>
               </div>
