@@ -243,14 +243,21 @@ const HomePage = () => {
     <div className="min-h-screen bg-white">
 
       {/* ── TICKER BANNER ────────────────────────────────────────── */}
-      <div className="bg-emerald-500 overflow-hidden py-2.5">
+      <div className="overflow-hidden py-2.5 absolute w-full z-10" style={{ top: '64px' }}>
         <div className="flex w-max animate-marquee">
           {[0, 1].map(group => (
-            <div key={group} className="flex shrink-0">
-              {[...Array(8)].map((_, i) => (
-                <span key={i} className="inline-flex items-center gap-2 text-white text-sm font-semibold px-10">
-                  <Globe className="h-4 w-4 flex-shrink-0" />
-                  The first global lead referral platform
+            <div key={group} className="flex shrink-0 items-center">
+              {[
+                'Turn Your Network Into Earnings',
+                'Your Network Has Value. Start Earning From It.',
+                'Connections That Pay Off',
+                'Turn Professional Connections Into Real Earnings',
+                'A Smarter Way to Earn Through Your Professional Network',
+                'Referrals Happen Naturally. We Simply Added Rewards.',
+              ].map((text, i) => (
+                <span key={i} className="inline-flex items-center gap-2.5 text-white/80 text-sm font-medium px-10 whitespace-nowrap">
+                  <Globe className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
+                  {text}
                 </span>
               ))}
             </div>
@@ -261,14 +268,18 @@ const HomePage = () => {
       {/* ── 1. HERO ──────────────────────────────────────────────── */}
       <section className="relative pt-20 pb-28 overflow-hidden">
 
-        {/* Background photo — dark fiber optics with green/blue glow */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1488229297570-58520851e868?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80")' }}
+        {/* Background video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/2.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
         />
 
         {/* Heavy dark overlay so image provides texture without clashing */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(8,13,24,0.92) 0%, rgba(8,13,24,0.85) 50%, rgba(8,13,24,0.93) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(8,13,24,0.80) 0%, rgba(8,13,24,0.52) 50%, rgba(8,13,24,0.80) 100%)' }} />
 
         {/* Glow orbs layered on top for extra depth */}
         <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)' }} />
