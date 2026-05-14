@@ -5,6 +5,7 @@ const { protect, adminOnly } = require('../middleware/auth');
 const Query = require('../models/Query');
 const Settings = require('../models/Settings');
 const Notification = require('../models/Notification');
+const BotMessage = require('../models/BotMessage');
 
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
@@ -296,6 +297,38 @@ router.put('/queries/:id/status', protect, adminOnly, async (req, res) => {
   } catch (error) {
     console.error('Admin update query status error:', error);
     res.status(500).json({ message: 'Server error updating query status' });
+  }
+});
+
+// @route   GET /api/admin/bot-history
+// @desc    Get all users who have bot messages (with message counts)
+// @access  Private/Admin
+router.get('/bot-history', protect, adminOnly, async (req, res) => {
+  try {
+    const users = await BotMessage.aggregate([
+      { $group: { _id: '$user', count: { $sum: 1 }, lastMessage: { $max: '$createdAt' } } },
+      { $sort: { lastMessage: -1 } },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+      { $unwind: '$user' },
+      { $project: { _id: 1, count: 1, lastMessage: 1, 'user.name': 1, 'user.email': 1, 'user.userId': 1 } },
+    ]);
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/bot-history/:userId
+// @desc    Get bot chat history for a specific user
+// @access  Private/Admin
+router.get('/bot-history/:userId', protect, adminOnly, async (req, res) => {
+  try {
+    const messages = await BotMessage.find({ user: req.params.userId })
+      .sort({ createdAt: 1 })
+      .limit(500);
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
