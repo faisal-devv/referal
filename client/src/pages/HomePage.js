@@ -285,21 +285,25 @@ const HomePage = () => {
         <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)' }} />
         <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%)' }} />
 
+        {/* Globe label — screen-left, same height as pill */}
+        <div className="absolute left-4 top-16 z-10 flex items-center gap-2">
+          <img src="/E1" alt="globe" className="w-12 h-12 object-contain" />
+          <span className="text-white text-sm font-bold tracking-[0.2em] uppercase animate-pulse" style={{ textShadow: '0 0 10px rgba(255,255,255,0.7), 0 0 20px rgba(255,255,255,0.4)' }}>The First Global Lead Referral Platform</span>
+        </div>
+
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
           {/* Pill tag */}
           <div className="flex justify-center mb-8">
-            <span
-              className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium px-4 py-1.5 rounded-full animate-bounce-slight"
-            >
+            <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium px-4 py-1.5 rounded-full animate-bounce-slight">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Earn commissions, free to join
             </span>
           </div>
 
           {/* Animated headline, word by word */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight max-w-4xl mx-auto mb-6">
+          <h1 className="text-5xl sm:text-6xl lg:text-6xl font-bold leading-tight tracking-tight max-w-4xl mx-auto mb-6 pt-10">
             {[
               { text: 'Every Business Starts With a Connection.', cls: 'text-white' },
               { text: 'We Just Made It Pay.',      cls: 'text-emerald-400' },

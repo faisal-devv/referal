@@ -17,6 +17,7 @@ import NotificationBell        from '../components/Common/NotificationBell';
 import AdminSummary           from '../components/Admin/AdminSummary';
 import AdminQueriesManagement from '../components/Admin/AdminQueriesManagement';
 import PartnerApplicationsManagement from '../components/Admin/PartnerApplicationsManagement';
+import BotHistoryManagement from '../components/Admin/BotHistoryManagement';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -26,7 +27,8 @@ const NAV = [
   { id: 'users',    label: 'Users',               icon: Users,         },
   { id: 'earnings', label: 'Earnings',            icon: DollarSign,    },
   { id: 'queries',   label: 'Queries',             icon: MessageSquare, },
-  { id: 'partners',  label: 'Partner Applications', icon: Users2,   },
+  { id: 'partners',   label: 'Partner Applications', icon: Users2,        },
+  { id: 'bothistory', label: 'AI Chat History',      icon: MessageSquare },
   { id: 'settings',  label: 'Settings',            icon: Settings,      },
 ];
 
@@ -172,7 +174,8 @@ const AdminPage = () => {
       case 'users':    return <AdminUsersManagement />;
       case 'earnings': return <AdminEarningsManagement />;
       case 'queries':   return <AdminQueriesManagement />;
-      case 'partners':  return <PartnerApplicationsManagement />;
+      case 'partners':    return <PartnerApplicationsManagement />;
+      case 'bothistory':  return <BotHistoryManagement />;
       case 'settings':  return <AdminSettings />;
       default:         return <AdminSummary stats={stats} onNavigate={setActiveSection} />;
     }

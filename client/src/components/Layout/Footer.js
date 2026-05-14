@@ -53,7 +53,7 @@ const Footer = () => (
       </div>
 
       <div className="border-t border-slate-800 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p className="text-slate-500 text-sm">© 2024 Referus.co. All rights reserved.</p>
+        <p className="text-slate-500 text-sm">© 2026 Referus.co. All rights reserved.</p>
         <div className="flex gap-6">
           <Link to="/privacy" className="text-slate-500 hover:text-white text-sm transition-colors">Privacy Policy</Link>
           <Link to="/terms"   className="text-slate-500 hover:text-white text-sm transition-colors">Terms of Service</Link>

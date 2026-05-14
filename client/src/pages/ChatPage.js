@@ -10,6 +10,16 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const BOT_CONV_ID = '__bot__';
 
+const formatDateLabel = (dateStr) => {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+};
+
 const ChatPage = () => {
   const { user } = useAuth();
   const { isDark } = useAppTheme();
@@ -89,7 +99,10 @@ const ChatPage = () => {
   const fetchBotHistory = async () => {
     try {
       setBotLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/chat/bot/history`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/chat/bot/history`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setBotMessages(response.data);
     } catch {
       toast.error('Failed to load AI chat history');
@@ -276,29 +289,48 @@ const ChatPage = () => {
                       <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                     </div>
                   ) : botMessages.length > 0 ? (
-                    botMessages.map((msg) => (
-                      <div key={msg._id} className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'}`}>
-                          {msg.role === 'user'
-                            ? <span className="text-white text-xs font-bold">{(user?.name || 'U')[0].toUpperCase()}</span>
-                            : <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
-                          }
-                        </div>
-                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                          msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-sm'
-                            : isDark ? 'bg-slate-800 text-white border border-slate-700 rounded-bl-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
-                        }`}>
-                          {msg.content}
-                          {msg.forwarded && (
-                            <p className="text-xs mt-1 text-blue-400">📨 Forwarded to support team</p>
-                          )}
-                          <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                    ))
+                    (() => {
+                      let lastDate = null;
+                      return botMessages.map((msg) => {
+                        const msgDate = new Date(msg.createdAt).toDateString();
+                        const showDate = msgDate !== lastDate;
+                        lastDate = msgDate;
+                        return (
+                          <React.Fragment key={msg._id}>
+                            {showDate && (
+                              <div className="flex items-center gap-3 my-3">
+                                <div className={`flex-1 h-px ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-500'}`}>
+                                  {formatDateLabel(msg.createdAt)}
+                                </span>
+                                <div className={`flex-1 h-px ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                              </div>
+                            )}
+                            <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'}`}>
+                                {msg.role === 'user'
+                                  ? <span className="text-white text-xs font-bold">{(user?.name || 'U')[0].toUpperCase()}</span>
+                                  : <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                                }
+                              </div>
+                              <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                                msg.role === 'user'
+                                  ? 'bg-blue-600 text-white rounded-br-sm'
+                                  : isDark ? 'bg-slate-800 text-white border border-slate-700 rounded-bl-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
+                              }`}>
+                                {msg.content}
+                                {msg.forwarded && (
+                                  <p className="text-xs mt-1 text-blue-400">📨 Forwarded to support team</p>
+                                )}
+                                <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      });
+                    })()
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
