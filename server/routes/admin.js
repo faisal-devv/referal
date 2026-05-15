@@ -300,17 +300,86 @@ router.put('/queries/:id/status', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/bot-history/:userId/reply
+// @desc    Admin sends a reply to a user's bot chat
+// @access  Private/Admin
+router.post('/bot-history/:userId/reply', protect, adminOnly, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content?.trim()) return res.status(400).json({ message: 'Content is required' });
+
+    const message = await BotMessage.create({
+      user: req.params.userId,
+      role: 'assistant',
+      content: content.trim(),
+      isAdminReply: true,
+    });
+
+    // Emit real-time to user if they have the chat open
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${req.params.userId}`).emit('adminBotReply', {
+        _id: message._id,
+        role: 'assistant',
+        content: message.content,
+        isAdminReply: true,
+        createdAt: message.createdAt,
+      });
+    }
+
+    res.status(201).json(message);
+  } catch (err) {
+    console.error('Admin reply error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/bot-history/:userId/bot-pause
+// @desc    Force-set botPaused to true (for admin-initiated chats)
+// @access  Private/Admin
+router.put('/bot-history/:userId/bot-pause', protect, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.userId, { botPaused: true }, { new: true }).select('botPaused');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ botPaused: user.botPaused });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/bot-history/:userId/bot-toggle
+// @desc    Toggle bot on/off for a specific user
+// @access  Private/Admin
+router.put('/bot-history/:userId/bot-toggle', protect, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('botPaused name');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.botPaused = !user.botPaused;
+    await user.save();
+    res.json({ botPaused: user.botPaused });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/bot-history
 // @desc    Get all users who have bot messages (with message counts)
 // @access  Private/Admin
 router.get('/bot-history', protect, adminOnly, async (req, res) => {
   try {
     const users = await BotMessage.aggregate([
-      { $group: { _id: '$user', count: { $sum: 1 }, lastMessage: { $max: '$createdAt' } } },
+      { $sort: { createdAt: 1 } },
+      { $group: {
+        _id: '$user',
+        count: { $sum: 1 },
+        lastMessage: { $max: '$createdAt' },
+        lastMessageRole: { $last: '$role' },
+        lastIsAdminReply: { $last: '$isAdminReply' },
+      }},
       { $sort: { lastMessage: -1 } },
       { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
       { $unwind: '$user' },
-      { $project: { _id: 1, count: 1, lastMessage: 1, 'user.name': 1, 'user.email': 1, 'user.userId': 1 } },
+      { $project: { _id: 1, count: 1, lastMessage: 1, lastMessageRole: 1, lastIsAdminReply: 1, 'user.name': 1, 'user.email': 1, 'user.userId': 1, 'user.botPaused': 1 } },
     ]);
     res.json(users);
   } catch (err) {

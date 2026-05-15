@@ -23,11 +23,15 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
+
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
+
+// Make io accessible in route handlers via req.app.get('io')
+app.set('io', io);
 
 // CORS must come first so all responses (including errors) carry the right headers
 const allowedOrigins = [

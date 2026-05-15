@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Search, Phone, Mail, Bot } from 'lucide-react';
+import { Send, MessageCircle, Search, Phone, Mail, Bot, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -307,17 +307,28 @@ const ChatPage = () => {
                               </div>
                             )}
                             <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'}`}>
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                msg.role === 'user' ? 'bg-blue-600' : msg.isAdminReply ? 'bg-emerald-600' : isDark ? 'bg-slate-700 border border-slate-600' : 'bg-white border border-gray-200'
+                              }`}>
                                 {msg.role === 'user'
                                   ? <span className="text-white text-xs font-bold">{(user?.name || 'U')[0].toUpperCase()}</span>
-                                  : <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                                  : msg.isAdminReply
+                                    ? <ShieldCheck className="h-3.5 w-3.5 text-white" />
+                                    : <Bot className={`h-3.5 w-3.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                                 }
                               </div>
                               <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                                 msg.role === 'user'
                                   ? 'bg-blue-600 text-white rounded-br-sm'
-                                  : isDark ? 'bg-slate-800 text-white border border-slate-700 rounded-bl-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
+                                  : msg.isAdminReply
+                                    ? isDark ? 'bg-emerald-900/30 text-white border border-emerald-700 rounded-bl-sm' : 'bg-emerald-50 text-gray-800 border border-emerald-200 rounded-bl-sm shadow-sm'
+                                    : isDark ? 'bg-slate-800 text-white border border-slate-700 rounded-bl-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
                               }`}>
+                                {msg.isAdminReply && (
+                                  <p className={`text-xs font-semibold mb-1 flex items-center gap-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                    <ShieldCheck className="h-3 w-3" /> Support Agent
+                                  </p>
+                                )}
                                 {msg.content}
                                 {msg.forwarded && (
                                   <p className="text-xs mt-1 text-blue-400">📨 Forwarded to support team</p>
