@@ -56,6 +56,10 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
+  botPaused: {
+    type: Boolean,
+    default: false
+  },
   userId: {
     type: String,
     unique: true,

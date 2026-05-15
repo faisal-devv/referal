@@ -7,6 +7,7 @@ const Settings = require('../models/Settings');
 const { protect } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const BOT_KNOWLEDGE = require('../data/botKnowledge');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 
@@ -58,6 +59,26 @@ router.post('/bot', [
 
   const { message, history = [] } = req.body;
   const userId = await tryGetUser(req);
+
+  // If admin has paused the bot for this user, save msg but skip AI
+  if (userId) {
+    const userDoc = await User.findById(userId).select('botPaused name');
+    if (userDoc?.botPaused) {
+      await BotMessage.create({ user: userId, role: 'user', content: message });
+      // Notify all admins
+      User.find({ role: { $in: ['admin', 'superadmin'] } }).select('_id').then(admins => {
+        const notifications = admins.map(a => ({
+          recipient: a._id,
+          type: 'user_message',
+          title: 'New message from user',
+          message: `${userDoc.name} sent a message: "${message.slice(0, 80)}${message.length > 80 ? '…' : ''}"`,
+          link: '/admin',
+        }));
+        if (notifications.length > 0) Notification.insertMany(notifications).catch(() => {});
+      }).catch(() => {});
+      return res.json({ reply: "Our support team is reviewing your conversation and will reply shortly.", botPaused: true });
+    }
+  }
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
