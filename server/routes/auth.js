@@ -1,12 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const { protect } = require('../middleware/auth');
+const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -50,68 +50,6 @@ const generateUserId = async (name) => {
   return `${prefix}${suffix}`;
 };
 
-// ── Welcome email ─────────────────────────────────────────────────────────────
-
-const sendWelcomeEmail = async (email, name, userId) => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-    console.log(`[DEV] Welcome email for ${email} — User ID: ${userId}`);
-    return;
-  }
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  });
-  await transporter.sendMail({
-    from: `"Referus" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    to: email,
-    subject: 'Welcome to Referus.co — Your User ID',
-    html: `
-      <div style="font-family:sans-serif;max-width:520px;margin:auto">
-        <h2 style="color:#1e293b">Welcome to Referus.co, ${name}!</h2>
-        <p style="color:#475569">Your account has been created successfully. Here is your unique User ID — keep it handy, you may need it when contacting support or referencing your account.</p>
-        <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin:24px 0;text-align:center">
-          <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em">Your User ID</p>
-          <p style="margin:0;font-size:26px;font-weight:700;letter-spacing:.04em;color:#4f46e5">${userId}</p>
-        </div>
-        <p style="color:#94a3b8;font-size:13px">This ID is unique to you. You can also view it anytime on your profile page.</p>
-        <p style="color:#475569">Happy referring!</p>
-        <p style="color:#475569"><strong>— The Referus Team</strong></p>
-      </div>
-    `,
-  });
-};
-
-const sendResetEmail = async (email, resetUrl) => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SMTP is not configured. Set SMTP_HOST and SMTP_USER env vars.');
-    }
-    console.log(`[DEV] Password reset link for ${email}:\n${resetUrl}`);
-    return;
-  }
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  await transporter.sendMail({
-    from: `"Referus" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    to: email,
-    subject: 'Reset your Referus password',
-    html: `
-      <p>You requested a password reset for your Referus account.</p>
-      <p>Click the link below to set a new password. This link expires in 1 hour.</p>
-      <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#1d4ed8;color:#fff;border-radius:6px;text-decoration:none;">Reset Password</a>
-      <p>If you did not request this, you can safely ignore this email.</p>
-    `,
-  });
-};
 
 const router = express.Router();
 
@@ -307,7 +245,7 @@ router.post('/forgot-password', loginLimiter, [
     const resetUrl = `${clientUrl}/reset-password/${rawToken}`;
 
     try {
-      await sendResetEmail(user.email, resetUrl);
+      await sendPasswordResetEmail(user.email, resetUrl);
     } catch (emailErr) {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;

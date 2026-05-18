@@ -6,6 +6,7 @@ const Query = require('../models/Query');
 const Settings = require('../models/Settings');
 const Notification = require('../models/Notification');
 const BotMessage = require('../models/BotMessage');
+const { sendLeadStatusEmail } = require('../utils/email');
 
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
 
@@ -195,7 +196,7 @@ router.put('/leads/:id/status', protect, adminOnly, async (req, res) => {
     const updatedLead = await Lead.findById(req.params.id)
       .populate('user', 'name email');
 
-    // Notify the lead owner about the status change
+    // Notify and email the lead owner about the status change
     if (updatedLead.user) {
       const isDealClosed = status === 'Deal Closed';
       Notification.create({
@@ -207,6 +208,12 @@ router.put('/leads/:id/status', protect, adminOnly, async (req, res) => {
           : `Your lead for ${updatedLead.companyName} is now: ${status}`,
         link: '/leads',
       }).catch(() => {});
+      sendLeadStatusEmail(
+        updatedLead.user.email,
+        updatedLead.user.name,
+        updatedLead.companyName,
+        status
+      ).catch(() => {});
     }
 
     res.json(updatedLead);

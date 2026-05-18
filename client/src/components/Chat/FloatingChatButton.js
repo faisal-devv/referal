@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { MessageCircle, X, Send, Bot, User, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -10,14 +11,55 @@ const WELCOME = {
 };
 
 const FloatingChatButton = () => {
-  const [isOpen, setIsOpen]           = useState(false);
-  const [messages, setMessages]       = useState([WELCOME]);
-  const [input, setInput]             = useState('');
-  const [loading, setLoading]         = useState(false);
+  const { user } = useAuth();
+  const [isOpen, setIsOpen]             = useState(false);
+  const [messages, setMessages]         = useState([WELCOME]);
+  const [input, setInput]               = useState('');
+  const [loading, setLoading]           = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [greeting, setGreeting]         = useState(false);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
   const pollRef   = useRef(null);
+
+  // Auto-open and show greeting on first login
+  useEffect(() => {
+    if (!user?._id) return;
+    const key = `referus_welcomed_${user._id}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+
+    // Open after 1.5s so the page has settled
+    const openTimer = setTimeout(() => {
+      setIsOpen(true);
+      setGreeting(true);
+
+      // First typing bubble → greeting message
+      setTimeout(() => {
+        const name = user.name?.split(' ')[0] || 'there';
+        setMessages([{
+          role: 'assistant',
+          content: `👋 Welcome to Referus, ${name}! Great to have you here.`,
+        }]);
+        setGreeting(false);
+
+        // Second typing bubble → follow-up
+        setTimeout(() => {
+          setGreeting(true);
+          setTimeout(() => {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: "I'm your personal support assistant. Ask me anything — how to submit a lead, track your earnings, withdraw funds, or anything else on the platform. I'm here 24/7 😊",
+            }]);
+            setGreeting(false);
+          }, 1800);
+        }, 600);
+
+      }, 1800);
+    }, 1500);
+
+    return () => clearTimeout(openTimer);
+  }, [user?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const authHeaders = () => {
     const token = localStorage.getItem('token');
@@ -193,7 +235,7 @@ const FloatingChatButton = () => {
               </div>
             ))}
 
-            {loading && (
+            {(loading || greeting) && (
               <div className="flex items-end gap-2">
                 <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center">
                   <Bot className="h-3.5 w-3.5 text-blue-600" />
