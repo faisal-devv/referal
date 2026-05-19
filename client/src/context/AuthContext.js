@@ -219,8 +219,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      await axios.post(`${API_BASE_URL}/auth/register`, { name, email, password });
+      const res = await axios.post(`${API_BASE_URL}/auth/register`, { name, email, password });
       dispatch({ type: 'LOGOUT' });
+      if (res.data.pending) {
+        return { success: true, pending: true, email: res.data.email };
+      }
       toast.success('Account created! Please sign in.');
       return { success: true };
     } catch (error) {
@@ -228,6 +231,33 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'LOGIN_FAILURE', payload: message });
       toast.error(message);
       return { success: false, error: message };
+    }
+  };
+
+  const verifyEmail = async (email, otp) => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const res = await axios.post(`${API_BASE_URL}/auth/verify-email`, { email, otp });
+      localStorage.setItem('token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+      dispatch({ type: 'LOGIN_SUCCESS', payload: res.data });
+      toast.success('Email verified! Welcome to Referus.co');
+      return { success: true };
+    } catch (error) {
+      const message = friendlyError(error);
+      dispatch({ type: 'LOGIN_FAILURE', payload: message });
+      return { success: false, error: message };
+    }
+  };
+
+  const resendOtp = async (email) => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/resend-otp`, { email });
+      toast.success('New code sent to your email');
+      return { success: true };
+    } catch (error) {
+      toast.error(friendlyError(error));
+      return { success: false };
     }
   };
 
@@ -267,6 +297,8 @@ export const AuthProvider = ({ children }) => {
     ...state,
     login,
     register,
+    verifyEmail,
+    resendOtp,
     logout,
     updateUser,
     clearError,

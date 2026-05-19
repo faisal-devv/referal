@@ -1,6 +1,6 @@
 const { Resend } = require('resend');
 
-const FROM = `Referus <${process.env.EMAIL_FROM || 'team@referus.co'}>`;
+const FROM = `Referus.co <${process.env.EMAIL_FROM || 'team@referus.co'}>`;
 
 const send = async ({ to, subject, html }) => {
   if (!process.env.RESEND_API_KEY) {
@@ -110,4 +110,38 @@ const sendWithdrawalEmail = (email, name, amount, currency, status) => {
   });
 };
 
-module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendLeadStatusEmail, sendWithdrawalEmail };
+const sendOtpEmail = (email, name, otp) =>
+  send({
+    to: email,
+    subject: 'Your Referus.co verification code',
+    html: base(`
+      <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px">Verify your email</h2>
+      <p style="color:#475569;margin:0 0 20px">Hi ${name}, enter the 6-digit code below to verify your email address. It expires in <strong>10 minutes</strong>.</p>
+      <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;text-align:center;margin-bottom:24px">
+        <p style="margin:0 0 6px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em">Verification Code</p>
+        <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:.3em;color:#1d4ed8">${otp}</p>
+      </div>
+      <p style="color:#94a3b8;font-size:13px;margin:0">If you didn't create a Referus.co account, ignore this email.</p>
+    `),
+  });
+
+const sendContactQueryEmail = (name, fromEmail, subject, message) =>
+  send({
+    to: process.env.EMAIL_FROM || 'team@referus.co',
+    subject: `[Contact Form] ${subject}`,
+    html: base(`
+      <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px">New Contact Form Submission</h2>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px;width:80px">From</td><td style="padding:8px 0;color:#0f172a;font-weight:600">${name}</td></tr>
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px">Email</td><td style="padding:8px 0"><a href="mailto:${fromEmail}" style="color:#1d4ed8">${fromEmail}</a></td></tr>
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px">Subject</td><td style="padding:8px 0;color:#0f172a">${subject}</td></tr>
+      </table>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px">
+        <p style="margin:0 0 6px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em">Message</p>
+        <p style="margin:0;color:#334155;white-space:pre-wrap">${message}</p>
+      </div>
+      <p style="color:#94a3b8;font-size:12px;margin-top:16px">Reply directly to this email to respond to ${name}.</p>
+    `),
+  });
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendLeadStatusEmail, sendWithdrawalEmail, sendOtpEmail, sendContactQueryEmail };

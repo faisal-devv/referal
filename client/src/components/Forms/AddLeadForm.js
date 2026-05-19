@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Building2, Mail, FileText, CheckCircle, Info, ChevronDown, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import Modal from '../Common/Modal';
 import { useAppTheme } from '../../context/AppThemeContext';
+
+const HCAPTCHA_SITE_KEY = process.env.REACT_APP_HCAPTCHA_SITE_KEY;
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -194,6 +197,8 @@ const AddLeadForm = () => {
 
   const [errors, setErrors]         = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
   const [isSubmitted, setIsSubmitted]   = useState(false);
 
   // ── Theme tokens ──────────────────────────────────────────────
@@ -272,6 +277,7 @@ const AddLeadForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (!captchaToken) { toast.error('Please complete the CAPTCHA'); return; }
     setIsSubmitting(true);
 
     const fullPhone = phoneNumber.trim();
@@ -302,6 +308,7 @@ const AddLeadForm = () => {
           hasReference: formData.useReference === 'use',
           referencePerson: formData.useReference === 'use' ? formData.referencePerson : '',
           value: 0, currency: 'USD',
+          hcaptchaToken: captchaToken,
         }),
       });
 
@@ -315,6 +322,8 @@ const AddLeadForm = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('There was an error submitting your lead. Please try again.');
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -507,11 +516,21 @@ const AddLeadForm = () => {
           </div>
         </div>
 
+        {/* CAPTCHA */}
+        <div className="flex justify-center pt-2">
+          <HCaptcha
+            sitekey={HCAPTCHA_SITE_KEY}
+            onVerify={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+            ref={captchaRef}
+          />
+        </div>
+
         {/* Submit */}
         <div className="pt-4">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !captchaToken}
             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3.5 px-6 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
