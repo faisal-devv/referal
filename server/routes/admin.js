@@ -1,7 +1,7 @@
 const express = require('express');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, superAdminOnly } = require('../middleware/auth');
 const Query = require('../models/Query');
 const Settings = require('../models/Settings');
 const Notification = require('../models/Notification');
@@ -159,6 +159,20 @@ router.put('/leads/:id', protect, adminOnly, async (req, res) => {
   } catch (error) {
     console.error('Admin edit lead error:', error);
     res.status(500).json({ message: 'Server error editing lead' });
+  }
+});
+
+// @route   DELETE /api/admin/leads/:id
+// @desc    Delete a lead (Superadmin only)
+// @access  Private (Superadmin only)
+router.delete('/leads/:id', protect, superAdminOnly, async (req, res) => {
+  try {
+    const lead = await Lead.findByIdAndDelete(req.params.id);
+    if (!lead) return res.status(404).json({ message: 'Lead not found' });
+    res.json({ message: 'Lead deleted' });
+  } catch (error) {
+    console.error('Delete lead error:', error);
+    res.status(500).json({ message: 'Server error deleting lead' });
   }
 });
 

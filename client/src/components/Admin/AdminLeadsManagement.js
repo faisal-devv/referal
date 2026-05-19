@@ -4,6 +4,7 @@ import {
   User,
   Eye,
   Edit2,
+  Trash2,
   Save,
   Search,
   ChevronDown,
@@ -11,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -31,6 +33,8 @@ const statusColors = {
 };
 
 const AdminLeadsManagement = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +45,8 @@ const AdminLeadsManagement = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [editLead, setEditLead] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // lead object to delete
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState(new Set());
 
@@ -235,6 +241,25 @@ const AdminLeadsManagement = () => {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/admin/leads/${deleteConfirm.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      setLeads(prev => prev.filter(l => l.id !== deleteConfirm.id));
+      toast.success('Lead deleted');
+      setDeleteConfirm(null);
+    } catch {
+      toast.error('Failed to delete lead');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -410,6 +435,15 @@ const AdminLeadsManagement = () => {
                                 >
                                   {leadStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
+                                {isSuperAdmin && (
+                                  <button
+                                    onClick={() => setDeleteConfirm(lead)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Delete
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -637,6 +671,43 @@ const AdminLeadsManagement = () => {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mx-auto mb-4">
+              <Trash2 className="h-7 w-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">Delete Lead</h3>
+            <p className="text-sm text-gray-500 text-center mb-2">
+              You are about to permanently delete the lead for
+            </p>
+            <p className="text-base font-semibold text-gray-800 text-center mb-1">{deleteConfirm.companyName}</p>
+            <p className="text-xs text-gray-400 text-center mb-6">submitted by {deleteConfirm.user?.name} · {deleteConfirm.category}</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6 text-sm text-red-700 text-center">
+              This action <strong>cannot be undone</strong>. All lead data will be permanently removed.
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : <Trash2 className="h-4 w-4" />}
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
             </div>
           </div>
         </div>
