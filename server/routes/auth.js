@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const { protect } = require('../middleware/auth');
-const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
+const { sendWelcomeEmail, sendPasswordResetEmail, sendOtpEmail } = require('../utils/email');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -95,30 +95,24 @@ router.post('/register', registerLimiter, [
     // Generate unique userId
     const userId = await generateUserId(name);
 
-    // Create user
+    // Generate 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Create unverified user
     const user = await User.create({
       name,
       email,
       password,
       userId,
+      isVerified: false,
+      emailOtp: otp,
+      emailOtpExpire: otpExpire,
     });
 
     if (user) {
-      // Send welcome email with userId (non-blocking — don't fail registration if email fails)
-      sendWelcomeEmail(user.email, user.name, user.userId).catch(err =>
-        console.error('Failed to send welcome email:', err)
-      );
-
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        userId: user.userId,
-        wallet: user.wallet,
-        preferredCurrency: user.preferredCurrency,
-        token: generateToken(user._id),
-      });
+      await sendOtpEmail(user.email, user.name, otp);
+      res.status(201).json({ pending: true, email: user.email });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -148,6 +142,11 @@ router.post('/login', loginLimiter, [
 
     const user = await User.findOne({ email });
 
+    // Only block users who registered after OTP was introduced (they have a pending emailOtp)
+    if (user && !user.isVerified && user.emailOtp) {
+      return res.status(401).json({ message: 'Please verify your email before signing in.', needsVerification: true, email });
+    }
+
     if (user && (await user.matchPassword(password))) {
       user.lastLogin = new Date();
       await user.save({ validateBeforeSave: false });
@@ -170,6 +169,66 @@ router.post('/login', loginLimiter, [
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
+  }
+});
+
+// @route   POST /api/auth/verify-email
+// @desc    Verify email with OTP
+// @access  Public
+router.post('/verify-email', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
+    const user = await User.findOne({ email, isVerified: false });
+    if (!user) return res.status(400).json({ message: 'No pending verification for this email' });
+
+    if (user.emailOtp !== String(otp)) return res.status(400).json({ message: 'Incorrect code' });
+    if (user.emailOtpExpire < new Date()) return res.status(400).json({ message: 'Code expired. Request a new one.' });
+
+    user.isVerified = true;
+    user.emailOtp = undefined;
+    user.emailOtpExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    sendWelcomeEmail(user.email, user.name, user.userId).catch(() => {});
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      userId: user.userId,
+      wallet: user.wallet,
+      preferredCurrency: user.preferredCurrency,
+      phone: user.phone,
+      profileImage: user.profileImage,
+      token: generateToken(user._id),
+    });
+  } catch (err) {
+    console.error('Verify email error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/resend-otp
+// @desc    Resend OTP to email
+// @access  Public
+router.post('/resend-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email, isVerified: false });
+    if (!user) return res.status(400).json({ message: 'No pending verification for this email' });
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.emailOtp = otp;
+    user.emailOtpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    await sendOtpEmail(user.email, user.name, otp);
+    res.json({ message: 'New code sent' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

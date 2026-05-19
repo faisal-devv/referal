@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const Query = require('../models/Query');
+const { sendContactQueryEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.post('/', queryRateLimit, [
   try {
     const { name, email, subject, message } = req.body;
     const query = await Query.create({ name, email, subject, message });
+    sendContactQueryEmail(name, email, subject, message).catch(() => {});
     return res.status(201).json(query);
   } catch (error) {
     console.error('Create query error:', error);

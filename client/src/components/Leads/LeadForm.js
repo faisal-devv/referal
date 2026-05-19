@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Building2, CreditCard, Home, Wrench, Shield, Save, X } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { friendlyError } from '../../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+const HCAPTCHA_SITE_KEY = process.env.REACT_APP_HCAPTCHA_SITE_KEY;
 
 const LeadForm = ({ onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   const categories = [
@@ -27,16 +31,24 @@ const LeadForm = ({ onClose, onSuccess }) => {
   ];
 
   const onSubmit = async (data) => {
+    if (!captchaToken) {
+      toast.error('Please complete the CAPTCHA');
+      return;
+    }
     try {
       setIsSubmitting(true);
-      const response = await axios.post(`${API_BASE_URL}/leads`, data);
+      const response = await axios.post(`${API_BASE_URL}/leads`, { ...data, hcaptchaToken: captchaToken });
       toast.success('Lead submitted successfully!');
       onSuccess?.(response.data);
       reset();
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
       onClose?.();
     } catch (error) {
       console.error('Error submitting lead:', error);
       toast.error(friendlyError(error));
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -243,6 +255,15 @@ const LeadForm = ({ onClose, onSuccess }) => {
 
           {/* Form Actions */}
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="flex flex-col items-start gap-2 mr-auto">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                ref={captchaRef}
+                size="normal"
+              />
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -252,7 +273,7 @@ const LeadForm = ({ onClose, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !captchaToken}
               className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 flex items-center space-x-2"
             >
               {isSubmitting ? (

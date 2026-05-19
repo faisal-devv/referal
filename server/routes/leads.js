@@ -5,6 +5,24 @@ const User = require('../models/User');
 const Settings = require('../models/Settings');
 const { protect, adminOnly } = require('../middleware/auth');
 const Notification = require('../models/Notification');
+const https = require('https');
+
+const verifyHcaptcha = (token) => new Promise((resolve) => {
+  const secret = process.env.HCAPTCHA_SECRET;
+  if (!secret || !token) { resolve(false); return; }
+  const params = `response=${encodeURIComponent(token)}&secret=${encodeURIComponent(secret)}`;
+  const req = https.request({
+    hostname: 'hcaptcha.com', path: '/siteverify', method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(params) },
+  }, (res) => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => { try { resolve(JSON.parse(data).success === true); } catch { resolve(false); } });
+  });
+  req.on('error', () => resolve(false));
+  req.write(params);
+  req.end();
+});
 
 // Maps lead currency to the User.wallet field name
 const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
@@ -50,8 +68,14 @@ router.post('/', protect, [
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const captchaOk = await verifyHcaptcha(req.body.hcaptchaToken);
+    if (!captchaOk) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed. Please try again.' });
+    }
+
+    const { hcaptchaToken, ...leadFields } = req.body;
     const leadData = {
-      ...req.body,
+      ...leadFields,
       user: req.user._id
     };
 
