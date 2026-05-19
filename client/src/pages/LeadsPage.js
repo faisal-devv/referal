@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 
 import { useAppTheme } from '../context/AppThemeContext';
 import { friendlyError } from '../context/AuthContext';
+import { LEAD_STATUSES as STATUSES } from '../constants/leadStatuses';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -20,8 +21,6 @@ const INDUSTRIES = [
   'Insurance',
   'Other',
 ];
-
-const STATUSES = ['Pending', 'Contacted', 'Proposal Submitted', 'Deal Closed', 'Client Refused'];
 
 const STATUS_DARK = {
   'Deal Closed':        { cls: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25', icon: <CheckCircle className="h-3.5 w-3.5" /> },

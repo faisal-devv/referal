@@ -13,16 +13,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { LEAD_STATUSES as leadStatuses } from '../../constants/leadStatuses';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
-
-const leadStatuses = [
-  'Pending',
-  'Contacted',
-  'Proposal Submitted',
-  'Deal Closed',
-  'Client Refused',
-];
 
 const statusColors = {
   'Pending':            'bg-yellow-100 text-yellow-800',

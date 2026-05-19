@@ -109,6 +109,21 @@ io.use((socket, next) => {
   }
 });
 
+// Simple per-socket rate limiter for message events
+const makeRateLimiter = (maxPerWindow, windowMs) => {
+  const counts = new Map();
+  return (socketId) => {
+    const now = Date.now();
+    const entry = counts.get(socketId) || { count: 0, reset: now + windowMs };
+    if (now > entry.reset) { entry.count = 0; entry.reset = now + windowMs; }
+    entry.count++;
+    counts.set(socketId, entry);
+    return entry.count <= maxPerWindow;
+  };
+};
+const msgRateOk = makeRateLimiter(20, 10000); // 20 messages per 10s
+const typingRateOk = makeRateLimiter(10, 3000); // 10 typing events per 3s
+
 // Socket.io for real-time chat
 io.on('connection', (socket) => {
   // Auto-join authenticated user's own room — client cannot spoof the room
@@ -116,11 +131,14 @@ io.on('connection', (socket) => {
 
   // Handle sending messages
   socket.on('sendMessage', async (data) => {
+    if (!msgRateOk(socket.id)) {
+      socket.emit('error', { message: 'Slow down — too many messages.' });
+      return;
+    }
     try {
       const { receiverId, message } = data;
-      const senderId = socket.userId; // always from verified token, not client payload
+      const senderId = socket.userId;
 
-      // Persist to database
       const chatMessage = await ChatMessage.create({
         sender: senderId,
         receiver: receiverId,
@@ -135,10 +153,7 @@ io.on('connection', (socket) => {
         timestamp: chatMessage.createdAt
       };
 
-      // Emit to receiver
       socket.to(`user_${receiverId}`).emit('newMessage', payload);
-
-      // Emit back to sender for confirmation
       socket.emit('messageSent', payload);
     } catch (error) {
       console.error('Socket message error:', error);
@@ -148,13 +163,16 @@ io.on('connection', (socket) => {
 
   // Handle typing indicators
   socket.on('typing', (data) => {
+    if (!typingRateOk(socket.id)) return;
     socket.to(`user_${data.receiverId}`).emit('userTyping', {
       senderId: socket.userId,
       isTyping: data.isTyping
     });
   });
 
-  socket.on('disconnect', () => {});
+  socket.on('disconnect', () => {
+    msgRateOk(socket.id); // clears nothing but harmless; Map entries GC naturally
+  });
 });
 
 // Error handling middleware

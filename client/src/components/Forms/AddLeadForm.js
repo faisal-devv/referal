@@ -283,21 +283,6 @@ const AddLeadForm = () => {
     const fullPhone = phoneNumber.trim();
 
     try {
-      fetch('https://formspree.io/f/xkgqvjkw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: formData.fullName, companyName: formData.companyName,
-          designation: formData.designation, email: formData.email, mobile: fullPhone,
-          industry: formData.industry === 'Other' ? formData.otherIndustry : formData.industry,
-          hasReference: formData.useReference === 'use',
-          referencePerson: formData.referencePerson, useReference: formData.useReference,
-          details: formData.details, submissionType: 'Lead Referral',
-          notificationEmail: 'shoaibfm1988@gmail.com',
-          timestamp: new Date().toISOString(), userAgent: navigator.userAgent, url: window.location.href,
-        }),
-      }).catch(() => {});
-
       const apiResponse = await fetch(`${API_BASE_URL}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },

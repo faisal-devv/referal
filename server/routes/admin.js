@@ -8,27 +8,7 @@ const Notification = require('../models/Notification');
 const BotMessage = require('../models/BotMessage');
 const { sendLeadStatusEmail } = require('../utils/email');
 
-const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
-
-const calculateCommissionAmount = async (lead) => {
-  const settings = await Settings.findById('global');
-  if (!settings?.commissionRates || lead.value <= 0) return 0;
-
-  let rates = settings.commissionRates.get(lead.category);
-  if (!rates) {
-    settings.commissionRates.forEach((v, k) => {
-      if (!rates) {
-        const kl = k.toLowerCase();
-        const cl = lead.category.toLowerCase();
-        if (kl.includes(cl) || cl.includes(kl)) rates = v;
-      }
-    });
-  }
-
-  if (!rates) return 0;
-  const midRate = (rates.min + rates.max) / 2;
-  return parseFloat(((lead.value * midRate) / 100).toFixed(2));
-};
+const { CURRENCY_WALLET_KEY, calculateCommissionAmount } = require('../utils/constants');
 
 const router = express.Router();
 

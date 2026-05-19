@@ -2,51 +2,10 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
-const Settings = require('../models/Settings');
 const { protect, adminOnly } = require('../middleware/auth');
 const Notification = require('../models/Notification');
-const https = require('https');
-
-const verifyHcaptcha = (token) => new Promise((resolve) => {
-  const secret = process.env.HCAPTCHA_SECRET;
-  if (!secret || !token) { resolve(false); return; }
-  const params = `response=${encodeURIComponent(token)}&secret=${encodeURIComponent(secret)}`;
-  const req = https.request({
-    hostname: 'hcaptcha.com', path: '/siteverify', method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(params) },
-  }, (res) => {
-    let data = '';
-    res.on('data', chunk => data += chunk);
-    res.on('end', () => { try { resolve(JSON.parse(data).success === true); } catch { resolve(false); } });
-  });
-  req.on('error', () => resolve(false));
-  req.write(params);
-  req.end();
-});
-
-// Maps lead currency to the User.wallet field name
-const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
-
-const calculateCommissionAmount = async (lead) => {
-  const settings = await Settings.findById('global');
-  if (!settings?.commissionRates || lead.value <= 0) return 0;
-
-  let rates = settings.commissionRates.get(lead.category);
-  if (!rates) {
-    // Case-insensitive partial match
-    settings.commissionRates.forEach((v, k) => {
-      if (!rates) {
-        const kl = k.toLowerCase();
-        const cl = lead.category.toLowerCase();
-        if (kl.includes(cl) || cl.includes(kl)) rates = v;
-      }
-    });
-  }
-
-  if (!rates) return 0;
-  const midRate = (rates.min + rates.max) / 2;
-  return parseFloat(((lead.value * midRate) / 100).toFixed(2));
-};
+const { verifyHcaptcha } = require('../utils/captcha');
+const { CURRENCY_WALLET_KEY, calculateCommissionAmount } = require('../utils/constants');
 
 const router = express.Router();
 

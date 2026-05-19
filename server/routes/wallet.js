@@ -4,8 +4,7 @@ const User = require('../models/User');
 const Withdrawal = require('../models/Withdrawal');
 const { protect, adminOnly, superAdminOnly } = require('../middleware/auth');
 const Notification = require('../models/Notification');
-
-const CURRENCY_WALLET_KEY = { USD: 'usd', AED: 'aed', EUR: 'euro', SAR: 'sar' };
+const { CURRENCY_WALLET_KEY } = require('../utils/constants');
 
 const router = express.Router();
 

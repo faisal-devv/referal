@@ -111,7 +111,14 @@ router.post('/register', registerLimiter, [
     });
 
     if (user) {
-      await sendOtpEmail(user.email, user.name, otp);
+      try {
+        await sendOtpEmail(user.email, user.name, otp);
+      } catch (emailErr) {
+        // Email failed — delete the unverified user so they can try again
+        await user.deleteOne().catch(() => {});
+        console.error('OTP email failed:', emailErr);
+        return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+      }
       res.status(201).json({ pending: true, email: user.email });
     } else {
       res.status(400).json({ message: 'Invalid user data' });

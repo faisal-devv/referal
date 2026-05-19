@@ -4,7 +4,7 @@ const ChatMessage = require('../models/ChatMessage');
 const BotMessage = require('../models/BotMessage');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
-const { protect } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const BOT_KNOWLEDGE = require('../data/botKnowledge');
 const Notification = require('../models/Notification');
@@ -315,13 +315,8 @@ router.get('/messages/:userId', protect, async (req, res) => {
 // @route   GET /api/chat/admin/users
 // @desc    Get all users for admin chat
 // @access  Private
-router.get('/admin/users', protect, async (req, res) => {
+router.get('/admin/users', protect, adminOnly, async (req, res) => {
   try {
-    // Only admins can access this
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
     const users = await User.find({ role: 'user' })
       .select('name email')
       .sort({ name: 1 });
