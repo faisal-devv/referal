@@ -70,7 +70,7 @@ const Sidebar = ({ activeSection, setActiveSection, sidebarOpen, setSidebarOpen,
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-0.5">
           <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-3">Main Menu</p>
-          {NAV.map(({ id, label, icon: Icon }) => {
+          {NAV.filter(({ id }) => id !== 'settings' || user?.role === 'superadmin').map(({ id, label, icon: Icon }) => {
             const active = activeSection === id;
             return (
               <button

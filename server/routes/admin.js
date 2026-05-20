@@ -60,8 +60,8 @@ router.get('/settings', protect, adminOnly, async (req, res) => {
 });
 
 // @route   PUT /api/admin/settings
-// @access  Private (Admin only)
-router.put('/settings', protect, adminOnly, async (req, res) => {
+// @access  Private (Super Admin only)
+router.put('/settings', protect, superAdminOnly, async (req, res) => {
   try {
     const allowed = [
       'supportEmail', 'supportResponseHours',

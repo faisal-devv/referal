@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Save, RefreshCw, Shield, DollarSign,
   Building2, CreditCard, Home, Wrench,
-  Percent, Mail, Globe, UserPlus, Wallet, Loader
+  Percent, Mail, Globe, UserPlus, Wallet, Loader, Lock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -30,6 +31,7 @@ const authHeader = () => ({
 });
 
 const AdminSettings = () => {
+  const { user } = useAuth();
   const [loading, setLoading]   = useState(true);
   const [saving,  setSaving]    = useState(false);
 
@@ -119,6 +121,20 @@ const AdminSettings = () => {
       <div className="p-6">{children}</div>
     </div>
   );
+
+  if (user?.role !== 'superadmin') {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center">
+          <Lock className="h-7 w-7 text-amber-600" />
+        </div>
+        <p className="text-sm font-semibold text-gray-700">Super Admin access required</p>
+        <p className="text-xs text-gray-400 max-w-xs text-center">
+          Only Super Admins can manage platform settings.
+        </p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
