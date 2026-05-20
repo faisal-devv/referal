@@ -8,6 +8,7 @@ const { protect, adminOnly } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const BOT_KNOWLEDGE = require('../data/botKnowledge');
 const Notification = require('../models/Notification');
+const { sendBotMessageAlert } = require('../utils/email');
 
 const router = express.Router();
 
@@ -127,6 +128,12 @@ router.post('/bot', [
         { user: userId, role: 'user', content: message },
         { user: userId, role: 'assistant', content: finalReply, forwarded },
       ]).catch(() => {});
+
+      // Alert team only on first message of a new session
+      if (history.length === 0) {
+        const userDoc = await User.findById(userId).select('userId name').catch(() => null);
+        if (userDoc) sendBotMessageAlert(userDoc.userId, userDoc.name).catch(() => {});
+      }
     }
 
     res.json({ reply: finalReply, forwarded });

@@ -6,6 +6,7 @@ const { protect, adminOnly } = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const { verifyHcaptcha } = require('../utils/captcha');
 const { CURRENCY_WALLET_KEY, calculateCommissionAmount } = require('../utils/constants');
+const { sendLeadSubmittedAlert } = require('../utils/email');
 
 const router = express.Router();
 
@@ -51,6 +52,9 @@ router.post('/', protect, [
       link: '/admin?tab=leads',
     }));
     if (notifData.length) Notification.insertMany(notifData).catch(() => {});
+
+    // Email team alert (fire and forget)
+    sendLeadSubmittedAlert(lead.user.userId, lead.user.name).catch(() => {});
 
     res.status(201).json(lead);
   } catch (error) {

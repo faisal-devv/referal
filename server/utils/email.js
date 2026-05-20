@@ -144,4 +144,50 @@ const sendContactQueryEmail = (name, fromEmail, subject, message) =>
     `),
   });
 
-module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendLeadStatusEmail, sendWithdrawalEmail, sendOtpEmail, sendContactQueryEmail };
+// Notify team when a user submits a lead
+const sendLeadSubmittedAlert = (userId, userName) =>
+  send({
+    to: process.env.EMAIL_FROM || 'team@referus.co',
+    subject: `New Lead Submitted — ${userId}`,
+    html: base(`
+      <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px">New Lead Submitted</h2>
+      <p style="color:#475569;margin:0 0 20px">A new lead has been submitted on the platform.</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px;width:90px">User ID</td><td style="padding:8px 0;color:#0f172a;font-weight:700;font-family:monospace;font-size:15px">${userId}</td></tr>
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px">Name</td><td style="padding:8px 0;color:#0f172a">${userName}</td></tr>
+      </table>
+      <p>${btn('https://referus.co/admin', 'View in Admin Panel')}</p>
+    `),
+  });
+
+// Notify team when a user sends a bot message
+const sendBotMessageAlert = (userId, userName) =>
+  send({
+    to: process.env.EMAIL_FROM || 'team@referus.co',
+    subject: `New Chat Message — ${userId}`,
+    html: base(`
+      <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px">New Chat Message</h2>
+      <p style="color:#475569;margin:0 0 20px">A user sent a message via the AI chatbot.</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px;width:90px">User ID</td><td style="padding:8px 0;color:#0f172a;font-weight:700;font-family:monospace;font-size:15px">${userId}</td></tr>
+        <tr><td style="padding:8px 0;color:#94a3b8;font-size:13px">Name</td><td style="padding:8px 0;color:#0f172a">${userName}</td></tr>
+      </table>
+      <p>${btn('https://referus.co/admin', 'View Chat History')}</p>
+    `),
+  });
+
+// Notify user when admin sends them a reply
+const sendAdminReplyAlert = (userEmail, userName) =>
+  send({
+    to: userEmail,
+    subject: 'You have a new message from Referus Support',
+    html: base(`
+      <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px">New Message from Support</h2>
+      <p style="color:#475569;margin:0 0 20px">Hi ${userName},</p>
+      <p style="color:#475569;margin:0 0 20px">Our support team has sent you a reply. Log in to your account to read it.</p>
+      <p>${btn('https://referus.co/chat', 'View Message')}</p>
+      <p style="color:#94a3b8;font-size:13px;margin-top:20px">If you have further questions, just reply in the chat.</p>
+    `),
+  });
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendLeadStatusEmail, sendWithdrawalEmail, sendOtpEmail, sendContactQueryEmail, sendLeadSubmittedAlert, sendBotMessageAlert, sendAdminReplyAlert };

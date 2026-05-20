@@ -6,7 +6,7 @@ const Query = require('../models/Query');
 const Settings = require('../models/Settings');
 const Notification = require('../models/Notification');
 const BotMessage = require('../models/BotMessage');
-const { sendLeadStatusEmail } = require('../utils/email');
+const { sendLeadStatusEmail, sendAdminReplyAlert } = require('../utils/email');
 
 const { CURRENCY_WALLET_KEY, calculateCommissionAmount } = require('../utils/constants');
 
@@ -327,6 +327,10 @@ router.post('/bot-history/:userId/reply', protect, adminOnly, async (req, res) =
         createdAt: message.createdAt,
       });
     }
+
+    // Email the user so they know to check their chat
+    const targetUser = await User.findById(req.params.userId).select('email name').catch(() => null);
+    if (targetUser) sendAdminReplyAlert(targetUser.email, targetUser.name).catch(() => {});
 
     res.status(201).json(message);
   } catch (err) {
