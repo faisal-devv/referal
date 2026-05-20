@@ -33,8 +33,9 @@ const BotHistoryManagement = () => {
   const [newSearch, setNewSearch]       = useState('');
   const [allUsersLoading, setAllUsersLoading] = useState(false);
 
-  const bottomRef = useRef(null);
-  const pollRef   = useRef(null);
+  const bottomRef  = useRef(null);
+  const pollRef    = useRef(null);
+  const replyRef   = useRef(null);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -166,6 +167,7 @@ const BotHistoryManagement = () => {
       );
       setMessages(prev => [...prev, data]);
       setReply('');
+      if (replyRef.current) replyRef.current.style.height = '38px';
       // Mark as read and update count
       setUsers(prev => prev.map(u => u._id === selectedUser._id ? { ...u, count: u.count + 1, lastMessageRole: 'read' } : u));
     } catch (err) {
@@ -497,13 +499,18 @@ const BotHistoryManagement = () => {
                   )}
                   <div className="flex items-end gap-2">
                     <textarea
+                      ref={replyRef}
                       value={reply}
-                      onChange={e => setReply(e.target.value)}
+                      onChange={e => {
+                        setReply(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                      }}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
                       placeholder={selectedUser.user.botPaused ? 'Reply as support agent…' : 'Reply as admin (bot is still active)…'}
                       rows={1}
-                      className="flex-1 resize-none px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 max-h-24"
-                      style={{ minHeight: '38px' }}
+                      className="flex-1 resize-none px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 overflow-y-auto"
+                      style={{ minHeight: '38px', maxHeight: '160px' }}
                     />
                     <button
                       onClick={sendReply}

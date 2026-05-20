@@ -57,7 +57,7 @@ app.use(helmet());
 
 // Rate limiting — disable X-Forwarded-For validation for local/non-proxied environments
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 5 * 60 * 1000,
   max: 500,
   validate: { xForwardedForHeader: false },
   standardHeaders: true,
