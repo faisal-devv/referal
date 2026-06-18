@@ -286,16 +286,16 @@ const HomePage = () => {
         <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%)' }} />
 
         {/* Globe label — screen-left, same height as pill */}
-        <div className="absolute left-4 top-16 z-10 flex items-center gap-2">
-          <img src="/E1" alt="globe" className="w-12 h-12 object-contain" />
-          <span className="text-white text-sm font-bold tracking-[0.2em] uppercase animate-pulse" style={{ textShadow: '0 0 10px rgba(255,255,255,0.7), 0 0 20px rgba(255,255,255,0.4)' }}>The First Global Lead Referral Platform</span>
+        <div className="absolute left-4 top-16 z-10 flex items-center gap-1.5 sm:gap-2">
+          <img src="/E1" alt="globe" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
+          <span className="text-white text-[9px] sm:text-sm font-bold tracking-[0.1em] sm:tracking-[0.2em] uppercase animate-pulse" style={{ textShadow: '0 0 10px rgba(255,255,255,0.7), 0 0 20px rgba(255,255,255,0.4)' }}>The First Global Lead Referral Platform</span>
         </div>
 
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
           {/* Pill tag */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8 mt-10 md:mt-0">
             <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium px-4 py-1.5 rounded-full animate-bounce-slight">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Earn commissions, free to join

@@ -12,27 +12,8 @@ connectDB();
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
-
-// Ensure DB connection before handling requests to avoid race conditions
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
-
-// CORS
+// CORS must be first — before rate limiter and DB middleware so preflight OPTIONS
+// requests get headers immediately without waiting for MongoDB to connect.
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   'https://www.referus.co',
@@ -47,6 +28,29 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Security middleware
+app.use(helmet());
+
+// Rate limiting — skip OPTIONS so browser preflights are never rate-limited
+// (a 429 on a preflight has no CORS headers, which the browser misreads as a CORS block)
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 500,
+  validate: { xForwardedForHeader: false },
+  skip: (req) => req.method === 'OPTIONS',
+});
+app.use(limiter);
+
+// Ensure DB connection before handling requests to avoid race conditions
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
