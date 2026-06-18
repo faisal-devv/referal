@@ -65,14 +65,14 @@ const BotHistoryManagement = () => {
           return fresh;
         }));
       } catch {}
-    }, 8000);
+    }, 20000);
     return () => clearInterval(listPoll);
   }, []);
 
   useEffect(() => {
     if (!selectedUser) { clearInterval(pollRef.current); return; }
     clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => pollMessages(selectedUser._id), 5000);
+    pollRef.current = setInterval(() => pollMessages(selectedUser._id), 10000);
     return () => clearInterval(pollRef.current);
   }, [selectedUser, pollMessages]);
 

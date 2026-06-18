@@ -49,7 +49,7 @@ const NotificationBell = ({ theme = 'light' }) => {
 
   useEffect(() => {
     fetchNotifications();
-    const id = setInterval(fetchNotifications, 10_000);
+    const id = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(id);
   }, [fetchNotifications]);
 

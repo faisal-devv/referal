@@ -8,8 +8,13 @@ if (!cached) {
 }
 
 const connectDB = async () => {
-  if (cached.conn) {
+  // readyState 1 = connected; if the cached connection is stale, fall through and reconnect
+  if (cached.conn && cached.conn.connection.readyState === 1) {
     return cached.conn;
+  }
+  if (cached.conn && cached.conn.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
   }
 
   if (!cached.promise) {
