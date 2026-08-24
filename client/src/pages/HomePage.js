@@ -305,8 +305,8 @@ const HomePage = () => {
           {/* Animated headline, word by word */}
           <h1 className="text-5xl sm:text-6xl lg:text-6xl font-bold leading-tight tracking-tight max-w-4xl mx-auto mb-6 pt-10">
             {[
-              { text: 'Every Business Starts With a Connection.', cls: 'text-white' },
-              { text: 'We Just Made It Pay.',      cls: 'text-emerald-400' },
+              { text: 'Refer a Client,', cls: 'text-white' },
+              { text: 'Earn a Cash Reward.',      cls: 'text-emerald-400' },
             ].map((part, i) => (
               <span
                 key={i}
@@ -318,12 +318,20 @@ const HomePage = () => {
             ))}
           </h1>
 
+          {/* Small tagline under headline */}
+          <p
+            className="text-slate-300 text-sm sm:text-base font-medium max-w-2xl mx-auto mb-4 animate-fade-in-up"
+            style={{ animationDelay: '0.6s' }}
+          >
+            Every Business Starts With a Connection. We Just Made It Pay.
+          </p>
+
           {/* Sub-headline */}
           <p
             className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-in-up"
             style={{ animationDelay: '0.75s' }}
           >
-            Referus connects referrers with businesses looking for leads. Submit a contact,
+            Submit a contact,
             our channel partners close the deal, and you earn a commission. Zero risk, zero cost.
           </p>
 
