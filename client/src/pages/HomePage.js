@@ -331,7 +331,7 @@ const HomePage = () => {
             className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-in-up"
             style={{ animationDelay: '0.75s' }}
           >
-            Referus connects referrers with businesses looking for leads. Submit a contact,
+            Submit a contact,
             our channel partners close the deal, and you earn a commission. Zero risk, zero cost.
           </p>
 
