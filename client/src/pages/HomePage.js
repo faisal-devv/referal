@@ -343,7 +343,7 @@ const HomePage = () => {
                   className="flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3.5 w-full sm:w-auto animate-fade-in-up"
                   style={{ animationDelay: `${0.9 + i * 0.1}s` }}
                 >
-                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg shadow-emerald-500/30">
+                  <div className="w-8 h-8 bg-emerald-400 rounded-full flex items-center justify-center text-slate-900 font-bold text-sm flex-shrink-0 shadow-lg shadow-emerald-400/20">
                     {i + 1}
                   </div>
                   <span className="text-slate-200 text-sm font-medium whitespace-nowrap">
@@ -365,7 +365,7 @@ const HomePage = () => {
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 text-base"
+                className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-500 text-slate-900 font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-xl shadow-emerald-400/20 hover:shadow-emerald-400/30 hover:-translate-y-0.5 text-base"
               >
                 Go to Dashboard <ArrowRight className="h-5 w-5" />
               </Link>
@@ -373,7 +373,7 @@ const HomePage = () => {
               <>
                 <button
                   onClick={handleGetStarted}
-                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 text-base"
+                  className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-500 text-slate-900 font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-xl shadow-emerald-400/20 hover:shadow-emerald-400/30 hover:-translate-y-0.5 text-base"
                 >
                   Start Referring Free <ArrowRight className="h-5 w-5" />
                 </button>

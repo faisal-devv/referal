@@ -42,6 +42,21 @@ module.exports = {
           800: '#065f46',
           900: '#064e3b',
         },
+        // Warm tan / skin-tone ramp — overrides Tailwind's built-in emerald
+        // scale so every existing `emerald-*` class recolors app-wide
+        // without touching the ~470 usages across the codebase.
+        emerald: {
+          50:  '#fbf5ef',
+          100: '#f6e8da',
+          200: '#f0d8c2',
+          300: '#e9c6a5',
+          400: '#e3ae7d',
+          500: '#d49254',
+          600: '#c47831',
+          700: '#9b5f27',
+          800: '#76481e',
+          900: '#523214',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
